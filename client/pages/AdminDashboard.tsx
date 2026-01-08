@@ -7,6 +7,7 @@ import { AdminLayout, AdminTab } from "@/components/admin/AdminLayout";
 import { DashboardTab } from "@/components/admin/DashboardTab";
 import { OrdersTab } from "@/components/admin/OrdersTab";
 import { StockTab } from "@/components/admin/StockTab";
+import { SuppliersTab } from "@/components/admin/SuppliersTab";
 import { UsersTab } from "@/components/admin/UsersTab";
 import { DeliveryTab } from "@/components/admin/DeliveryTab";
 import { PaymentsTab } from "@/components/admin/PaymentsTab";
@@ -41,6 +42,8 @@ export default function AdminDashboardPage() {
         return <OrdersTab onNavigate={handleTabNavigate} />;
       case "stock":
         return <StockTab onNavigate={handleTabNavigate} />;
+      case "suppliers":
+        return <SuppliersTab onNavigate={handleTabNavigate} />;
       case "users":
         return <UsersTab onNavigate={handleTabNavigate} />;
       case "delivery":

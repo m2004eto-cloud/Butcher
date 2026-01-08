@@ -25,6 +25,7 @@ import {
   Check,
   CheckCheck,
   Trash2,
+  Factory,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ export type AdminTab =
   | "dashboard"
   | "orders"
   | "stock"
+  | "suppliers"
   | "users"
   | "delivery"
   | "payments"
@@ -49,6 +51,7 @@ const tabConfig: { id: AdminTab; labelKey: string; icon: React.ElementType }[] =
   { id: "dashboard", labelKey: "admin.dashboard", icon: LayoutDashboard },
   { id: "orders", labelKey: "admin.orders", icon: ShoppingCart },
   { id: "stock", labelKey: "admin.inventory", icon: Package },
+  { id: "suppliers", labelKey: "admin.suppliers", icon: Factory },
   { id: "users", labelKey: "admin.users", icon: Users },
   { id: "delivery", labelKey: "admin.delivery", icon: Truck },
   { id: "payments", labelKey: "admin.payments", icon: CreditCard },

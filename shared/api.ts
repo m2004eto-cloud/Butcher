@@ -681,6 +681,225 @@ export interface ValidateDiscountResponse {
 }
 
 // =====================================================
+// SUPPLIER MANAGEMENT TYPES
+// =====================================================
+
+export type SupplierStatus = "active" | "inactive" | "pending" | "suspended";
+
+export type PaymentTerms = "net_7" | "net_15" | "net_30" | "net_60" | "cod" | "prepaid";
+
+export type PurchaseOrderStatus = 
+  | "draft"
+  | "pending"
+  | "approved"
+  | "ordered"
+  | "partially_received"
+  | "received"
+  | "cancelled";
+
+export interface SupplierContact {
+  id: string;
+  name: string;
+  position: string;
+  email: string;
+  phone: string;
+  isPrimary: boolean;
+}
+
+export interface SupplierAddress {
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+}
+
+export interface Supplier {
+  id: string;
+  code: string; // Unique supplier code (e.g., SUP-001)
+  name: string;
+  nameAr?: string;
+  email: string;
+  phone: string;
+  website?: string;
+  taxNumber?: string; // TRN or VAT number
+  
+  // Address
+  address: SupplierAddress;
+  
+  // Contacts
+  contacts: SupplierContact[];
+  
+  // Business Terms
+  paymentTerms: PaymentTerms;
+  currency: Currency;
+  creditLimit: number;
+  currentBalance: number;
+  
+  // Categories they supply
+  categories: string[];
+  
+  // Ratings and Performance
+  rating: number; // 1-5 stars
+  onTimeDeliveryRate: number; // Percentage
+  qualityScore: number; // Percentage
+  totalOrders: number;
+  totalSpent: number;
+  
+  // Status
+  status: SupplierStatus;
+  notes?: string;
+  
+  // Metadata
+  createdAt: string;
+  updatedAt: string;
+  lastOrderAt?: string;
+}
+
+export interface SupplierProduct {
+  id: string;
+  supplierId: string;
+  productId: string;
+  productName: string;
+  supplierSku: string; // Supplier's own SKU
+  unitCost: number;
+  minimumOrderQuantity: number;
+  leadTimeDays: number;
+  isPreferred: boolean; // If this is the preferred supplier for this product
+  lastPurchasePrice: number;
+  lastPurchaseDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  productId: string;
+  productName: string;
+  supplierSku?: string;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+  receivedQuantity: number;
+  notes?: string;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  orderNumber: string; // PO-2026-0001
+  supplierId: string;
+  supplierName: string;
+  
+  // Items
+  items: PurchaseOrderItem[];
+  
+  // Pricing
+  subtotal: number;
+  taxAmount: number;
+  taxRate: number;
+  shippingCost: number;
+  discount: number;
+  total: number;
+  
+  // Status
+  status: PurchaseOrderStatus;
+  paymentStatus: "pending" | "partial" | "paid";
+  
+  // Dates
+  orderDate: string;
+  expectedDeliveryDate: string;
+  actualDeliveryDate?: string;
+  
+  // Delivery
+  deliveryAddress: string;
+  deliveryNotes?: string;
+  
+  // Tracking
+  trackingNumber?: string;
+  
+  // Approvals
+  createdBy: string;
+  approvedBy?: string;
+  approvedAt?: string;
+  
+  // Notes
+  internalNotes?: string;
+  supplierNotes?: string;
+  
+  // History
+  statusHistory: {
+    status: PurchaseOrderStatus;
+    changedBy: string;
+    changedAt: string;
+    notes?: string;
+  }[];
+  
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSupplierRequest {
+  name: string;
+  nameAr?: string;
+  email: string;
+  phone: string;
+  website?: string;
+  taxNumber?: string;
+  address: SupplierAddress;
+  contacts: Omit<SupplierContact, "id">[];
+  paymentTerms: PaymentTerms;
+  currency?: Currency;
+  creditLimit?: number;
+  categories: string[];
+  notes?: string;
+}
+
+export interface UpdateSupplierRequest {
+  name?: string;
+  nameAr?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  taxNumber?: string;
+  address?: Partial<SupplierAddress>;
+  paymentTerms?: PaymentTerms;
+  currency?: Currency;
+  creditLimit?: number;
+  categories?: string[];
+  status?: SupplierStatus;
+  notes?: string;
+}
+
+export interface CreatePurchaseOrderRequest {
+  supplierId: string;
+  items: {
+    productId: string;
+    quantity: number;
+    unitCost: number;
+    notes?: string;
+  }[];
+  expectedDeliveryDate: string;
+  deliveryAddress: string;
+  deliveryNotes?: string;
+  shippingCost?: number;
+  discount?: number;
+  internalNotes?: string;
+  supplierNotes?: string;
+}
+
+export interface SupplierStats {
+  totalSuppliers: number;
+  activeSuppliers: number;
+  pendingSuppliers: number;
+  totalPurchaseOrders: number;
+  pendingOrders: number;
+  totalSpent: number;
+  averageLeadTime: number;
+  topCategories: { category: string; count: number }[];
+}
+
+// =====================================================
 // DEMO RESPONSE (backward compatibility)
 // =====================================================
 

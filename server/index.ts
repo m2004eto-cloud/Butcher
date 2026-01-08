@@ -13,6 +13,7 @@ import usersRouter from "./routes/users";
 import reportsRouter from "./routes/reports";
 import analyticsRouter from "./routes/analytics";
 import productsRouter from "./routes/products";
+import suppliersRouter from "./routes/suppliers";
 
 export function createServer() {
   const app = express();
@@ -130,6 +131,10 @@ export function createServer() {
   // PUT /api/products/:id - Update product
   // DELETE /api/products/:id - Delete product
   app.use("/api/products", productsRouter);
+
+  // Supplier Management
+  // GET /api/suppliers - Suppliers, contacts, products, purchase orders
+  app.use("/api/suppliers", suppliersRouter);
 
   return app;
 }

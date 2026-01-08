@@ -25,6 +25,16 @@ import type {
   LoginResponse,
   Product,
   CreateOrderRequest,
+  Supplier,
+  SupplierProduct,
+  PurchaseOrder,
+  SupplierStats,
+  CreateSupplierRequest,
+  UpdateSupplierRequest,
+  CreatePurchaseOrderRequest,
+  SupplierStatus,
+  PurchaseOrderStatus,
+  SupplierContact,
 } from "@shared/api";
 
 const API_BASE = "/api";
@@ -638,6 +648,111 @@ export const paymentsApi = {
     fetchApi<Payment>(`/payments/${paymentId}/refund`, {
       method: "POST",
       body: JSON.stringify({ amount, reason }),
+    }),
+};
+
+// =====================================================
+// REPORTS API
+// =====================================================
+
+// =====================================================
+// SUPPLIERS API
+// =====================================================
+
+export const suppliersApi = {
+  // Suppliers CRUD
+  getAll: (params?: { status?: string; category?: string; search?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set("status", params.status);
+    if (params?.category) searchParams.set("category", params.category);
+    if (params?.search) searchParams.set("search", params.search);
+    return fetchApi<Supplier[]>(`/suppliers?${searchParams.toString()}`);
+  },
+
+  getById: (id: string) => fetchApi<Supplier>(`/suppliers/${id}`),
+
+  getStats: () => fetchApi<SupplierStats>("/suppliers/stats"),
+
+  create: (data: CreateSupplierRequest) =>
+    fetchApi<Supplier>("/suppliers", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: UpdateSupplierRequest) =>
+    fetchApi<Supplier>(`/suppliers/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    fetchApi<null>(`/suppliers/${id}`, { method: "DELETE" }),
+
+  updateStatus: (id: string, status: SupplierStatus) =>
+    fetchApi<Supplier>(`/suppliers/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
+
+  // Supplier Contacts
+  addContact: (supplierId: string, contact: Omit<SupplierContact, "id">) =>
+    fetchApi<SupplierContact>(`/suppliers/${supplierId}/contacts`, {
+      method: "POST",
+      body: JSON.stringify(contact),
+    }),
+
+  removeContact: (supplierId: string, contactId: string) =>
+    fetchApi<null>(`/suppliers/${supplierId}/contacts/${contactId}`, {
+      method: "DELETE",
+    }),
+
+  // Supplier Products
+  getProducts: (supplierId: string) =>
+    fetchApi<SupplierProduct[]>(`/suppliers/${supplierId}/products`),
+
+  addProduct: (supplierId: string, product: Omit<SupplierProduct, "id" | "supplierId" | "createdAt" | "updatedAt" | "lastPurchasePrice" | "lastPurchaseDate">) =>
+    fetchApi<SupplierProduct>(`/suppliers/${supplierId}/products`, {
+      method: "POST",
+      body: JSON.stringify(product),
+    }),
+
+  removeProduct: (productId: string) =>
+    fetchApi<null>(`/suppliers/products/${productId}`, { method: "DELETE" }),
+
+  // Purchase Orders
+  getPurchaseOrders: (params?: { status?: string; supplierId?: string; startDate?: string; endDate?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set("status", params.status);
+    if (params?.supplierId) searchParams.set("supplierId", params.supplierId);
+    if (params?.startDate) searchParams.set("startDate", params.startDate);
+    if (params?.endDate) searchParams.set("endDate", params.endDate);
+    return fetchApi<PurchaseOrder[]>(`/suppliers/purchase-orders/list?${searchParams.toString()}`);
+  },
+
+  getPurchaseOrderById: (id: string) =>
+    fetchApi<PurchaseOrder>(`/suppliers/purchase-orders/${id}`),
+
+  createPurchaseOrder: (data: CreatePurchaseOrderRequest) =>
+    fetchApi<PurchaseOrder>("/suppliers/purchase-orders", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updatePurchaseOrderStatus: (id: string, status: PurchaseOrderStatus, notes?: string) =>
+    fetchApi<PurchaseOrder>(`/suppliers/purchase-orders/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, notes }),
+    }),
+
+  receivePurchaseOrderItems: (id: string, items: { itemId: string; receivedQuantity: number }[]) =>
+    fetchApi<PurchaseOrder>(`/suppliers/purchase-orders/${id}/receive`, {
+      method: "PUT",
+      body: JSON.stringify({ items }),
+    }),
+
+  cancelPurchaseOrder: (id: string) =>
+    fetchApi<PurchaseOrder>(`/suppliers/purchase-orders/${id}`, {
+      method: "DELETE",
     }),
 };
 
