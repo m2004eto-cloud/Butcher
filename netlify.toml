@@ -7,9 +7,22 @@
 [functions]
   external_node_modules = ["express"]
   node_bundler = "esbuild"
-  
+
+# Handle all API routes - redirect to serverless function
 [[redirects]]
-  force = true
   from = "/api/*"
-  status = 200
   to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+# SPA fallback - serve index.html for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"]}
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,9 +1,18 @@
 {
-  "buildCommand": "pnpm run build:client",
+  "buildCommand": "pnpm run build",
   "outputDirectory": "dist/spa",
+  "functions": {
+    "api/**/*.ts": {
+      "runtime": "@vercel/node@3.0.0"
+    }
+  },
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/:path*",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ]
