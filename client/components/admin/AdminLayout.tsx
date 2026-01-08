@@ -3,9 +3,10 @@
  * Sidebar navigation with tabs for all admin features
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -40,15 +41,15 @@ interface AdminLayoutProps {
   notifications?: number;
 }
 
-const tabs: { id: AdminTab; label: string; icon: React.ElementType }[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "orders", label: "Orders", icon: ShoppingCart },
-  { id: "stock", label: "Inventory", icon: Package },
-  { id: "users", label: "Users", icon: Users },
-  { id: "delivery", label: "Delivery", icon: Truck },
-  { id: "payments", label: "Payments", icon: CreditCard },
-  { id: "reports", label: "Reports", icon: BarChart3 },
-  { id: "settings", label: "Settings", icon: Settings },
+const tabConfig: { id: AdminTab; labelKey: string; icon: React.ElementType }[] = [
+  { id: "dashboard", labelKey: "admin.dashboard", icon: LayoutDashboard },
+  { id: "orders", labelKey: "admin.orders", icon: ShoppingCart },
+  { id: "stock", labelKey: "admin.inventory", icon: Package },
+  { id: "users", labelKey: "admin.users", icon: Users },
+  { id: "delivery", labelKey: "admin.delivery", icon: Truck },
+  { id: "payments", labelKey: "admin.payments", icon: CreditCard },
+  { id: "reports", labelKey: "admin.reports", icon: BarChart3 },
+  { id: "settings", labelKey: "admin.settings", icon: Settings },
 ];
 
 export function AdminLayout({
@@ -59,12 +60,21 @@ export function AdminLayout({
 }: AdminLayoutProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { language, setLanguage, t } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate("/admin/login");
   };
+
+  // Sample notifications for demo
+  const sampleNotifications = [
+    { id: 1, message: language === "ar" ? "طلب جديد #ORD-2026-0016" : "New order #ORD-2026-0016", time: "2m ago", unread: true },
+    { id: 2, message: language === "ar" ? "تنبيه مخزون منخفض: لحم البقر" : "Low stock alert: Beef Steak", time: "15m ago", unread: true },
+    { id: 3, message: language === "ar" ? "تم تسليم الطلب #ORD-2026-0012" : "Order #ORD-2026-0012 delivered", time: "1h ago", unread: false },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-100 flex">
@@ -90,8 +100,8 @@ export function AdminLayout({
               <Store className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="font-bold text-lg">Butcher Admin</h1>
-              <p className="text-xs text-slate-400">Management System</p>
+              <h1 className="font-bold text-lg">{t("admin.title")}</h1>
+              <p className="text-xs text-slate-400">{t("admin.subtitle")}</p>
             </div>
           </div>
           <button
@@ -104,7 +114,7 @@ export function AdminLayout({
 
         {/* Navigation */}
         <nav className="p-4 space-y-1">
-          {tabs.map((tab) => {
+          {tabConfig.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
@@ -122,7 +132,7 @@ export function AdminLayout({
                 )}
               >
                 <Icon className="w-5 h-5" />
-                {tab.label}
+                {t(tab.labelKey)}
                 {tab.id === "orders" && notifications > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                     {notifications}
@@ -152,7 +162,7 @@ export function AdminLayout({
               className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-sm transition-colors"
             >
               <Store className="w-4 h-4" />
-              View Store
+              {t("admin.viewStore")}
             </button>
             <button
               onClick={handleLogout}
@@ -175,18 +185,92 @@ export function AdminLayout({
             >
               <Menu className="w-6 h-6" />
             </button>
-            <h2 className="text-xl font-bold text-slate-900 capitalize">
-              {activeTab === "dashboard" ? "Dashboard Overview" : activeTab}
+            <h2 className="text-xl font-bold text-slate-900">
+              {activeTab === "dashboard" ? t("admin.dashboardOverview") : t(`admin.${activeTab}`)}
             </h2>
           </div>
 
-          <div className="flex items-center gap-4">
-            <button className="relative p-2 hover:bg-slate-100 rounded-lg">
-              <Bell className="w-5 h-5 text-slate-600" />
-              {notifications > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+          <div className="flex items-center gap-3">
+            {/* Language Switcher */}
+            <div className="flex gap-1 items-center bg-slate-100 border border-slate-200 rounded-md p-1">
+              <button
+                onClick={() => setLanguage("en")}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded transition-colors",
+                  language === "en"
+                    ? "bg-primary text-white"
+                    : "text-slate-600 hover:bg-slate-200"
+                )}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLanguage("ar")}
+                className={cn(
+                  "px-3 py-1.5 text-sm font-medium rounded transition-colors",
+                  language === "ar"
+                    ? "bg-primary text-white"
+                    : "text-slate-600 hover:bg-slate-200"
+                )}
+              >
+                AR
+              </button>
+            </div>
+
+            {/* Notifications */}
+            <div className="relative">
+              <button 
+                onClick={() => setNotificationOpen(!notificationOpen)}
+                className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <Bell className="w-5 h-5 text-slate-600" />
+                {notifications > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                )}
+              </button>
+
+              {/* Notification Dropdown */}
+              {notificationOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setNotificationOpen(false)} 
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+                    <div className="p-4 border-b border-slate-100 bg-slate-50">
+                      <h3 className="font-semibold text-slate-900">{t("admin.notifications")}</h3>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {sampleNotifications.length > 0 ? (
+                        sampleNotifications.map((notif) => (
+                          <div 
+                            key={notif.id} 
+                            className={cn(
+                              "p-4 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors",
+                              notif.unread && "bg-blue-50/50"
+                            )}
+                          >
+                            <div className="flex items-start gap-3">
+                              {notif.unread && (
+                                <span className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                              )}
+                              <div className={cn(!notif.unread && "ml-5")}>
+                                <p className="text-sm text-slate-700">{notif.message}</p>
+                                <p className="text-xs text-slate-400 mt-1">{notif.time}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-6 text-center text-slate-500">
+                          {t("admin.noNotifications")}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
-            </button>
+            </div>
           </div>
         </header>
 
