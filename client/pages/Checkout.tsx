@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -8,16 +8,21 @@ import { useLanguage } from "@/context/LanguageContext";
 import { PriceDisplay } from "@/components/CurrencySymbol";
 import { ordersApi, deliveryApi } from "@/lib/api";
 import type { Address } from "@shared/api";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-// Extend Window interface for Google Maps
-declare global {
-  interface Window {
-    google?: typeof google;
-  }
-}
+// Fix Leaflet default marker icon issue
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-// Google Maps API Key - replace with your actual key
-const GOOGLE_MAPS_API_KEY = "AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8";
+// @ts-ignore
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 
 type PaymentMethod = "card" | "cod" | null;
 
@@ -52,37 +57,9 @@ const EMPTY_ADDRESS_FORM: AddressFormData = {
 };
 
 // UAE center coordinates
-const UAE_CENTER = { lat: 25.2048, lng: 55.2708 }; // Dubai
+const UAE_CENTER: [number, number] = [25.2048, 55.2708]; // Dubai
 
-// Load Google Maps Script
-function useGoogleMaps() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  
-  useEffect(() => {
-    if (window.google?.maps) {
-      setIsLoaded(true);
-      return;
-    }
-    
-    const existingScript = document.getElementById("google-maps-script");
-    if (existingScript) {
-      existingScript.addEventListener("load", () => setIsLoaded(true));
-      return;
-    }
-    
-    const script = document.createElement("script");
-    script.id = "google-maps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setIsLoaded(true);
-    document.head.appendChild(script);
-  }, []);
-  
-  return isLoaded;
-}
-
-// Map Picker Component
+// Map Picker Component using Leaflet + OpenStreetMap (FREE)
 function MapPicker({ 
   latitude, 
   longitude, 
@@ -93,98 +70,138 @@ function MapPicker({
   onLocationSelect: (lat: number, lng: number, address?: string) => void;
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const googleMapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
-  const isLoaded = useGoogleMaps();
+  const leafletMapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
 
-  const updateMarker = useCallback((lat: number, lng: number) => {
-    if (!googleMapRef.current) return;
-    
-    const position = { lat, lng };
-    
-    if (markerRef.current) {
-      markerRef.current.setPosition(position);
-    } else {
-      markerRef.current = new google.maps.Marker({
-        position,
-        map: googleMapRef.current,
-        draggable: true,
-        animation: google.maps.Animation.DROP,
-      });
+  // Reverse geocode using Nominatim (free)
+  const reverseGeocode = async (lat: number, lng: number): Promise<string | undefined> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { headers: { "Accept-Language": "en" } }
+      );
+      const data = await response.json();
+      return data.display_name;
+    } catch {
+      return undefined;
+    }
+  };
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapRef.current || leafletMapRef.current) return;
+
+    const initialCenter: [number, number] = latitude && longitude 
+      ? [latitude, longitude] 
+      : UAE_CENTER;
+    const initialZoom = latitude && longitude ? 16 : 12;
+
+    leafletMapRef.current = L.map(mapRef.current).setView(initialCenter, initialZoom);
+
+    // Add OpenStreetMap tiles (FREE)
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
+    }).addTo(leafletMapRef.current);
+
+    // Add marker if coordinates exist
+    if (latitude && longitude) {
+      markerRef.current = L.marker([latitude, longitude], { draggable: true })
+        .addTo(leafletMapRef.current);
       
-      // Handle marker drag
-      markerRef.current.addListener("dragend", () => {
-        const pos = markerRef.current?.getPosition();
+      markerRef.current.on("dragend", async () => {
+        const pos = markerRef.current?.getLatLng();
         if (pos) {
-          onLocationSelect(pos.lat(), pos.lng());
-          // Reverse geocode to get address
-          const geocoder = new google.maps.Geocoder();
-          geocoder.geocode({ location: pos }, (results, status) => {
-            if (status === "OK" && results?.[0]) {
-              onLocationSelect(pos.lat(), pos.lng(), results[0].formatted_address);
-            }
-          });
+          const address = await reverseGeocode(pos.lat, pos.lng);
+          onLocationSelect(pos.lat, pos.lng, address);
         }
       });
     }
-    
-    googleMapRef.current.panTo(position);
-  }, [onLocationSelect]);
 
-  useEffect(() => {
-    if (!isLoaded || !mapRef.current) return;
-    
-    const initialPosition = latitude && longitude 
-      ? { lat: latitude, lng: longitude }
-      : UAE_CENTER;
-    
-    googleMapRef.current = new google.maps.Map(mapRef.current, {
-      center: initialPosition,
-      zoom: latitude && longitude ? 16 : 12,
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: false,
-    });
-    
-    // Add click listener
-    googleMapRef.current.addListener("click", (e: google.maps.MapMouseEvent) => {
-      if (e.latLng) {
-        updateMarker(e.latLng.lat(), e.latLng.lng());
-        onLocationSelect(e.latLng.lat(), e.latLng.lng());
+    // Handle map clicks
+    leafletMapRef.current.on("click", async (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      
+      if (markerRef.current) {
+        markerRef.current.setLatLng([lat, lng]);
+      } else {
+        markerRef.current = L.marker([lat, lng], { draggable: true })
+          .addTo(leafletMapRef.current!);
         
-        // Reverse geocode
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ location: e.latLng }, (results, status) => {
-          if (status === "OK" && results?.[0]) {
-            onLocationSelect(e.latLng!.lat(), e.latLng!.lng(), results[0].formatted_address);
+        markerRef.current.on("dragend", async () => {
+          const pos = markerRef.current?.getLatLng();
+          if (pos) {
+            const address = await reverseGeocode(pos.lat, pos.lng);
+            onLocationSelect(pos.lat, pos.lng, address);
           }
         });
       }
+      
+      const address = await reverseGeocode(lat, lng);
+      onLocationSelect(lat, lng, address);
     });
-    
-    // Add initial marker if coordinates exist
-    if (latitude && longitude) {
-      updateMarker(latitude, longitude);
-    }
-  }, [isLoaded, latitude, longitude, onLocationSelect, updateMarker]);
 
+    setIsMapReady(true);
+
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update marker when coordinates change externally
+  useEffect(() => {
+    if (!leafletMapRef.current || !isMapReady) return;
+    
+    if (latitude && longitude) {
+      if (markerRef.current) {
+        markerRef.current.setLatLng([latitude, longitude]);
+      } else {
+        markerRef.current = L.marker([latitude, longitude], { draggable: true })
+          .addTo(leafletMapRef.current);
+      }
+      leafletMapRef.current.setView([latitude, longitude], 16);
+    }
+  }, [latitude, longitude, isMapReady]);
+
+  // Search using Nominatim (free)
   const handleSearch = async () => {
-    if (!searchQuery.trim() || !googleMapRef.current) return;
+    if (!searchQuery.trim() || !leafletMapRef.current) return;
     
     setIsSearching(true);
-    const geocoder = new google.maps.Geocoder();
-    
-    geocoder.geocode({ address: searchQuery + ", UAE" }, (results, status) => {
-      setIsSearching(false);
-      if (status === "OK" && results?.[0]?.geometry?.location) {
-        const location = results[0].geometry.location;
-        updateMarker(location.lat(), location.lng());
-        googleMapRef.current?.setZoom(16);
-        onLocationSelect(location.lat(), location.lng(), results[0].formatted_address);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery + ", UAE")}&limit=1`,
+        { headers: { "Accept-Language": "en" } }
+      );
+      const results = await response.json();
+      
+      if (results.length > 0) {
+        const { lat, lon, display_name } = results[0];
+        const latitude = parseFloat(lat);
+        const longitude = parseFloat(lon);
+        
+        if (markerRef.current) {
+          markerRef.current.setLatLng([latitude, longitude]);
+        } else {
+          markerRef.current = L.marker([latitude, longitude], { draggable: true })
+            .addTo(leafletMapRef.current);
+        }
+        
+        leafletMapRef.current.setView([latitude, longitude], 16);
+        onLocationSelect(latitude, longitude, display_name);
+      } else {
+        alert("Location not found. Try a different search term.");
       }
-    });
+    } catch {
+      alert("Search failed. Please try again.");
+    }
+    setIsSearching(false);
   };
 
   const handleGetCurrentLocation = () => {
@@ -194,34 +211,28 @@ function MapPicker({
     }
     
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude: lat, longitude: lng } = position.coords;
-        updateMarker(lat, lng);
-        googleMapRef.current?.setZoom(16);
         
-        // Reverse geocode
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-          if (status === "OK" && results?.[0]) {
-            onLocationSelect(lat, lng, results[0].formatted_address);
+        if (leafletMapRef.current) {
+          if (markerRef.current) {
+            markerRef.current.setLatLng([lat, lng]);
           } else {
-            onLocationSelect(lat, lng);
+            markerRef.current = L.marker([lat, lng], { draggable: true })
+              .addTo(leafletMapRef.current);
           }
-        });
+          leafletMapRef.current.setView([lat, lng], 16);
+        }
+        
+        const address = await reverseGeocode(lat, lng);
+        onLocationSelect(lat, lng, address);
       },
       () => {
-        alert("Unable to retrieve your location");
-      }
+        alert("Unable to retrieve your location. Please allow location access.");
+      },
+      { enableHighAccuracy: true }
     );
   };
-
-  if (!isLoaded) {
-    return (
-      <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-3">
@@ -256,7 +267,7 @@ function MapPicker({
       {/* Map Container */}
       <div 
         ref={mapRef} 
-        className="w-full h-64 rounded-lg border border-input overflow-hidden"
+        className="w-full h-64 rounded-lg border border-input overflow-hidden z-0"
       />
       
       <p className="text-xs text-muted-foreground text-center">
@@ -266,23 +277,44 @@ function MapPicker({
   );
 }
 
-// Static Map Preview for saved addresses
+// Static Map Preview for saved addresses (using OpenStreetMap)
 function AddressMapPreview({ latitude, longitude }: { latitude?: number; longitude?: number }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const leafletMapRef = useRef<L.Map | null>(null);
+  
+  useEffect(() => {
+    if (!mapRef.current || !latitude || !longitude) return;
+    if (leafletMapRef.current) return; // Already initialized
+    
+    leafletMapRef.current = L.map(mapRef.current, {
+      zoomControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      attributionControl: false,
+    }).setView([latitude, longitude], 15);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+    }).addTo(leafletMapRef.current);
+
+    L.marker([latitude, longitude]).addTo(leafletMapRef.current);
+
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+      }
+    };
+  }, [latitude, longitude]);
+
   if (!latitude || !longitude) {
     return null;
   }
   
-  // Using Google Static Maps API for a simple preview
-  const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&zoom=15&size=200x100&scale=2&markers=color:red%7C${latitude},${longitude}&key=${GOOGLE_MAPS_API_KEY}`;
-  
   return (
     <div className="mt-2 rounded-lg overflow-hidden border border-border">
-      <img 
-        src={staticMapUrl} 
-        alt="Delivery location" 
-        className="w-full h-20 object-cover"
-        loading="lazy"
-      />
+      <div ref={mapRef} className="w-full h-20" />
     </div>
   );
 }
@@ -296,37 +328,47 @@ function AddressLocationViewer({
   onClose: () => void;
 }) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const isLoaded = useGoogleMaps();
+  const leafletMapRef = useRef<L.Map | null>(null);
   const [formattedAddress, setFormattedAddress] = useState<string>("");
 
   useEffect(() => {
-    if (!isLoaded || !mapRef.current || !address.latitude || !address.longitude) return;
+    if (!mapRef.current || !address.latitude || !address.longitude) return;
+    if (leafletMapRef.current) return; // Already initialized
     
-    const position = { lat: address.latitude, lng: address.longitude };
+    leafletMapRef.current = L.map(mapRef.current).setView(
+      [address.latitude, address.longitude], 
+      16
+    );
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
+    }).addTo(leafletMapRef.current);
+
+    L.marker([address.latitude, address.longitude])
+      .bindPopup(address.label)
+      .addTo(leafletMapRef.current);
     
-    const map = new google.maps.Map(mapRef.current, {
-      center: position,
-      zoom: 16,
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: true,
-    });
-    
-    new google.maps.Marker({
-      position,
-      map,
-      title: address.label,
-      animation: google.maps.Animation.DROP,
-    });
-    
-    // Reverse geocode to get formatted address
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ location: position }, (results, status) => {
-      if (status === "OK" && results?.[0]) {
-        setFormattedAddress(results[0].formatted_address);
+    // Reverse geocode to get formatted address using Nominatim
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${address.latitude}&lon=${address.longitude}&zoom=18&addressdetails=1`,
+      { headers: { "Accept-Language": "en" } }
+    )
+      .then(res => res.json())
+      .then(data => {
+        if (data.display_name) {
+          setFormattedAddress(data.display_name);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
       }
-    });
-  }, [isLoaded, address]);
+    };
+  }, [address]);
 
   if (!address.latitude || !address.longitude) {
     return (
