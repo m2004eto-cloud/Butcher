@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { productsApi } from "@/lib/api";
 
 export interface Product {
   id: string;
@@ -14,9 +15,12 @@ export interface Product {
 
 interface ProductsContextType {
   products: Product[];
-  addProduct: (product: Omit<Product, "id">) => void;
-  updateProduct: (id: string, updates: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
+  isLoading: boolean;
+  error: string | null;
+  refreshProducts: () => Promise<void>;
+  addProduct: (product: Omit<Product, "id">) => Promise<void>;
+  updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
+  deleteProduct: (id: string) => Promise<void>;
   getProductById: (id: string) => Product | undefined;
 }
 
@@ -110,29 +114,146 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
     const saved = localStorage.getItem("butcher_products");
     return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch products from backend on mount
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await productsApi.getAll();
+      if (response.success && response.data) {
+        // Map backend products to frontend format
+        const mappedProducts: Product[] = response.data.map((p) => ({
+          id: p.id,
+          name: p.name,
+          nameAr: p.nameAr,
+          price: p.price,
+          category: p.category,
+          description: p.description,
+          descriptionAr: p.descriptionAr,
+          image: p.image,
+          available: p.isActive,
+        }));
+        setProducts(mappedProducts);
+        localStorage.setItem("butcher_products", JSON.stringify(mappedProducts));
+      }
+    } catch (err) {
+      setError("Failed to fetch products");
+      // Keep using cached products if API fails
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("butcher_products", JSON.stringify(products));
   }, [products]);
 
-  const addProduct = (product: Omit<Product, "id">) => {
-    const newProduct: Product = {
-      ...product,
-      id: `prod_${Date.now()}`,
-    };
-    setProducts((prev) => [...prev, newProduct]);
+  const refreshProducts = async () => {
+    await fetchProducts();
   };
 
-  const updateProduct = (id: string, updates: Partial<Product>) => {
-    setProducts((prev) =>
-      prev.map((product) =>
-        product.id === id ? { ...product, ...updates } : product
-      )
-    );
+  const addProduct = async (product: Omit<Product, "id">) => {
+    try {
+      const response = await productsApi.create({
+        name: product.name,
+        nameAr: product.nameAr,
+        sku: `SKU-${Date.now()}`,
+        price: product.price,
+        costPrice: product.price * 0.6,
+        category: product.category,
+        description: product.description,
+        descriptionAr: product.descriptionAr,
+        image: product.image,
+        unit: "kg",
+        minOrderQuantity: 0.25,
+        maxOrderQuantity: 10,
+        isActive: product.available,
+        isFeatured: false,
+        tags: [],
+      });
+
+      if (response.success && response.data) {
+        const newProduct: Product = {
+          id: response.data.id,
+          name: response.data.name,
+          nameAr: response.data.nameAr,
+          price: response.data.price,
+          category: response.data.category,
+          description: response.data.description,
+          descriptionAr: response.data.descriptionAr,
+          image: response.data.image,
+          available: response.data.isActive,
+        };
+        setProducts((prev) => [...prev, newProduct]);
+      } else {
+        // Fallback to local add
+        const newProduct: Product = {
+          ...product,
+          id: `prod_${Date.now()}`,
+        };
+        setProducts((prev) => [...prev, newProduct]);
+      }
+    } catch {
+      // Fallback to local add
+      const newProduct: Product = {
+        ...product,
+        id: `prod_${Date.now()}`,
+      };
+      setProducts((prev) => [...prev, newProduct]);
+    }
   };
 
-  const deleteProduct = (id: string) => {
-    setProducts((prev) => prev.filter((product) => product.id !== id));
+  const updateProduct = async (id: string, updates: Partial<Product>) => {
+    try {
+      const response = await productsApi.update(id, {
+        name: updates.name,
+        nameAr: updates.nameAr,
+        price: updates.price,
+        category: updates.category,
+        description: updates.description,
+        descriptionAr: updates.descriptionAr,
+        image: updates.image,
+        isActive: updates.available,
+      });
+
+      if (response.success) {
+        setProducts((prev) =>
+          prev.map((product) =>
+            product.id === id ? { ...product, ...updates } : product
+          )
+        );
+      } else {
+        // Still update locally
+        setProducts((prev) =>
+          prev.map((product) =>
+            product.id === id ? { ...product, ...updates } : product
+          )
+        );
+      }
+    } catch {
+      // Fallback to local update
+      setProducts((prev) =>
+        prev.map((product) =>
+          product.id === id ? { ...product, ...updates } : product
+        )
+      );
+    }
+  };
+
+  const deleteProduct = async (id: string) => {
+    try {
+      await productsApi.delete(id);
+      setProducts((prev) => prev.filter((product) => product.id !== id));
+    } catch {
+      // Fallback to local delete
+      setProducts((prev) => prev.filter((product) => product.id !== id));
+    }
   };
 
   const getProductById = (id: string) => {
@@ -143,6 +264,9 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
     <ProductsContext.Provider
       value={{
         products,
+        isLoading,
+        error,
+        refreshProducts,
         addProduct,
         updateProduct,
         deleteProduct,

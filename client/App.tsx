@@ -10,6 +10,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { BasketProvider } from "@/context/BasketContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ProductsProvider } from "@/context/ProductsContext";
+import { useCapacitorInit } from "@/hooks/useCapacitor";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -26,47 +27,52 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <AuthProvider>
-        <ProductsProvider>
-          <BasketProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  {/* Auth Routes */}
-                  <Route path="/" element={<Login />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
+const App = () => {
+  // Initialize Capacitor for native mobile features
+  useCapacitorInit();
 
-                  {/* Visitor & Shopping Routes */}
-                  <Route path="/visitor" element={<Visitor />} />
-                  <Route path="/products" element={<Products />} />
+  return (
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <AuthProvider>
+          <ProductsProvider>
+            <BasketProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    {/* Auth Routes */}
+                    <Route path="/" element={<Login />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
-                  {/* Checkout Flow */}
-                  <Route path="/basket" element={<Basket />} />
-                  <Route path="/checkout" element={<Checkout />} />
-                  <Route path="/payment/card" element={<PaymentCard />} />
+                    {/* Visitor & Shopping Routes */}
+                    <Route path="/visitor" element={<Visitor />} />
+                    <Route path="/products" element={<Products />} />
 
-                  {/* Admin Routes */}
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                    {/* Checkout Flow */}
+                    <Route path="/basket" element={<Basket />} />
+                    <Route path="/checkout" element={<Checkout />} />
+                    <Route path="/payment/card" element={<PaymentCard />} />
 
-                  {/* Catch All */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </BasketProvider>
-        </ProductsProvider>
-      </AuthProvider>
-    </LanguageProvider>
-  </QueryClientProvider>
-);
+                    {/* Admin Routes */}
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
+                    {/* Catch All */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </BasketProvider>
+          </ProductsProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </QueryClientProvider>
+  );
+};
 
 createRoot(document.getElementById("root")!).render(<App />);

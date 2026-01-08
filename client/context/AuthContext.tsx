@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { authApi, setAuthToken, getAuthToken } from "@/lib/api";
 
 export interface User {
   id: string;
@@ -7,21 +8,15 @@ export interface User {
   email: string;
   mobile: string;
   emirate: string;
-  address: string;
+  address?: string;
   isVisitor: boolean;
   isAdmin?: boolean;
-  password?: string; // For demo purposes - in production, never store passwords in frontend
+  role?: string;
 }
 
 export interface RegisteredUser extends User {
   password: string;
 }
-
-// Admin credentials (in production, this should be handled securely on the server)
-const ADMIN_CREDENTIALS = {
-  email: "admin@butcher.ae",
-  password: "admin123",
-};
 
 interface PasswordResetRequest {
   email: string;
@@ -34,11 +29,12 @@ interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
   isAdmin: boolean;
+  isLoading: boolean;
   login: (user: User) => void;
-  loginWithCredentials: (mobile: string, password: string) => { success: boolean; error?: string };
-  loginAdmin: (email: string, password: string) => boolean;
+  loginWithCredentials: (mobile: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginAdmin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  register: (user: Omit<User, "id"> & { password: string }) => void;
+  register: (user: Omit<User, "id"> & { password: string }) => Promise<{ success: boolean; error?: string }>;
   updateUser: (user: Partial<User>) => void;
   requestPasswordReset: (email: string, mobile: string) => { success: boolean; error?: string };
   verifyResetToken: (token: string) => { valid: boolean; email?: string };
@@ -52,20 +48,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from localStorage on mount
+  // Load user from localStorage on mount and validate token
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error("Failed to parse user from localStorage:", error);
+    const initAuth = async () => {
+      const savedUser = localStorage.getItem("user");
+      const token = getAuthToken();
+
+      if (savedUser && token) {
+        try {
+          // Validate token with backend
+          const response = await authApi.getCurrentUser();
+          if (response.success && response.data) {
+            const userData: User = {
+              id: response.data.id,
+              firstName: response.data.firstName,
+              familyName: response.data.familyName,
+              email: response.data.email,
+              mobile: response.data.mobile,
+              emirate: response.data.emirate,
+              address: response.data.address,
+              isVisitor: false,
+              isAdmin: response.data.role === "admin",
+              role: response.data.role,
+            };
+            setUser(userData);
+            localStorage.setItem("user", JSON.stringify(userData));
+          } else {
+            // Token invalid, clear auth
+            setAuthToken(null);
+            localStorage.removeItem("user");
+          }
+        } catch (error) {
+          // Fallback to local user if API fails
+          setUser(JSON.parse(savedUser));
+        }
       }
-    }
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
-  // Helper to get all registered users from localStorage
+  // Helper to get all registered users from localStorage (for backward compatibility)
   const getRegisteredUsers = (): RegisteredUser[] => {
     const saved = localStorage.getItem("registered_users");
     return saved ? JSON.parse(saved) : [];
@@ -92,87 +118,102 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.setItem("user", JSON.stringify(newUser));
   };
 
-  const loginWithCredentials = (mobile: string, password: string): { success: boolean; error?: string } => {
-    const users = getRegisteredUsers();
-    const normalizedMobile = mobile.replace(/\s/g, "");
-    
-    const foundUser = users.find(
-      (u) => u.mobile.replace(/\s/g, "") === normalizedMobile
-    );
+  const loginWithCredentials = async (mobile: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await authApi.login(mobile, password);
 
-    if (!foundUser) {
-      return { success: false, error: "No account found with this phone number" };
+      if (response.success && response.data) {
+        // Set auth token
+        setAuthToken(response.data.token);
+
+        // Create user object
+        const userData: User = {
+          id: response.data.user.id,
+          firstName: response.data.user.firstName,
+          familyName: response.data.user.familyName,
+          email: response.data.user.email,
+          mobile: response.data.user.mobile,
+          emirate: response.data.user.emirate,
+          address: response.data.user.address,
+          isVisitor: false,
+          isAdmin: response.data.user.role === "admin",
+          role: response.data.user.role,
+        };
+
+        login(userData);
+        return { success: true };
+      }
+
+      return { success: false, error: response.error || "Login failed" };
+    } catch (error) {
+      return { success: false, error: "Network error. Please try again." };
     }
-
-    if (foundUser.password !== password) {
-      return { success: false, error: "Incorrect password" };
-    }
-
-    // Login successful
-    const { password: _, ...userWithoutPassword } = foundUser;
-    login(userWithoutPassword);
-    return { success: true };
   };
 
-  const loginAdmin = (email: string, password: string): boolean => {
-    if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
-      const adminUser: User = {
-        id: "admin_1",
-        firstName: "Admin",
-        familyName: "User",
-        email: ADMIN_CREDENTIALS.email,
-        mobile: "",
-        emirate: "",
-        address: "",
-        isVisitor: false,
-        isAdmin: true,
-      };
-      setUser(adminUser);
-      localStorage.setItem("user", JSON.stringify(adminUser));
-      return true;
+  const loginAdmin = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await authApi.adminLogin(email, password);
+
+      if (response.success && response.data) {
+        // Set auth token
+        setAuthToken(response.data.token);
+
+        // Create admin user object
+        const adminUser: User = {
+          id: response.data.user.id,
+          firstName: response.data.user.firstName,
+          familyName: response.data.user.familyName,
+          email: response.data.user.email,
+          mobile: response.data.user.mobile,
+          emirate: response.data.user.emirate,
+          address: response.data.user.address,
+          isVisitor: false,
+          isAdmin: true,
+          role: "admin",
+        };
+
+        setUser(adminUser);
+        localStorage.setItem("user", JSON.stringify(adminUser));
+        return { success: true };
+      }
+
+      return { success: false, error: response.error || "Invalid admin credentials" };
+    } catch (error) {
+      return { success: false, error: "Network error. Please check if the server is running." };
     }
-    return false;
   };
 
   const logout = () => {
+    // Call backend logout (fire and forget)
+    authApi.logout().catch(() => {});
+    
+    setAuthToken(null);
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("basket");
   };
 
-  const register = (newUser: Omit<User, "id"> & { password: string }) => {
-    const users = getRegisteredUsers();
-    
-    // Check if mobile already exists
-    const normalizedMobile = newUser.mobile.replace(/\s/g, "");
-    const existingUser = users.find(
-      (u) => u.mobile.replace(/\s/g, "") === normalizedMobile
-    );
+  const register = async (newUser: Omit<User, "id"> & { password: string }): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await authApi.register({
+        email: newUser.email,
+        mobile: newUser.mobile,
+        password: newUser.password,
+        firstName: newUser.firstName,
+        familyName: newUser.familyName,
+        emirate: newUser.emirate,
+      });
 
-    if (existingUser) {
-      // Update existing user
-      const updatedUsers = users.map((u) =>
-        u.mobile.replace(/\s/g, "") === normalizedMobile
-          ? { ...u, ...newUser, id: u.id }
-          : u
-      );
-      saveRegisteredUsers(updatedUsers);
-    } else {
-      // Create new user
-      const userWithId: RegisteredUser = {
-        ...newUser,
-        id: `user_${Date.now()}`,
-      };
-      users.push(userWithId);
-      saveRegisteredUsers(users);
+      if (response.success && response.data) {
+        // Auto-login after registration
+        const loginResult = await loginWithCredentials(newUser.mobile, newUser.password);
+        return loginResult;
+      }
+
+      return { success: false, error: response.error || "Registration failed" };
+    } catch (error) {
+      return { success: false, error: "Network error. Please try again." };
     }
-
-    // Login the user (without password in session)
-    const { password: _, ...userWithoutPassword } = newUser;
-    login({
-      ...userWithoutPassword,
-      id: existingUser?.id || `user_${Date.now()}`,
-    });
   };
 
   const updateUser = (updates: Partial<User>) => {
@@ -277,6 +318,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user,
         isLoggedIn: !!user && !user.isVisitor,
         isAdmin: !!user?.isAdmin,
+        isLoading,
         login,
         loginWithCredentials,
         loginAdmin,

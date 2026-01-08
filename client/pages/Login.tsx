@@ -7,7 +7,7 @@ import { isValidUAEPhone, isStrongPassword } from "@/utils/validators";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { loginWithCredentials, login } = useAuth();
   const { t } = useLanguage();
 
   const [mobile, setMobile] = useState("+971 ");
@@ -31,7 +31,7 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
@@ -40,23 +40,16 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      // For demo purposes, accept any valid phone and password
-      login({
-        id: `user_${Date.now()}`,
-        firstName: "User",
-        familyName: "Customer",
-        email: `user${Date.now()}@butcher.ae`,
-        mobile,
-        emirate: "Dubai",
-        address: "123 Main Street, Dubai",
-        isVisitor: false,
-      });
-
-      setIsLoading(false);
+    // Call backend API for login
+    const result = await loginWithCredentials(mobile, password);
+    
+    if (result.success) {
       navigate("/products");
-    }, 500);
+    } else {
+      setErrors({ ...errors, password: result.error || "Login failed" });
+    }
+    
+    setIsLoading(false);
   };
 
   const handleVisitorMode = () => {

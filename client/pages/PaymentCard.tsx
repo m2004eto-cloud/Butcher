@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useBasket } from "@/context/BasketContext";
@@ -10,11 +10,16 @@ import {
   isValidCVV,
   isValidExpiryDate,
 } from "@/utils/validators";
+import { ordersApi } from "@/lib/api";
 
 export default function PaymentCardPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { items, subtotal, vat, total, clearBasket } = useBasket();
   const { user } = useAuth();
+  
+  // Get addressId from navigation state (passed from Checkout)
+  const addressId = (location.state as { addressId?: string })?.addressId || "";
 
   const [formData, setFormData] = useState({
     cardholderName: user?.firstName || "",
@@ -28,6 +33,7 @@ export default function PaymentCardPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCVV, setShowCVV] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   if (items.length === 0) {
     return (
@@ -43,6 +49,32 @@ export default function PaymentCardPage() {
               className="btn-primary mt-4"
             >
               Back to Products
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // If no addressId was passed, redirect back to checkout
+  if (!addressId) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center px-4">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-2">
+              No delivery address selected
+            </h1>
+            <p className="text-muted-foreground mb-4">
+              Please select a delivery address before proceeding to payment.
+            </p>
+            <button
+              onClick={() => navigate("/checkout")}
+              className="btn-primary mt-4"
+            >
+              Back to Checkout
             </button>
           </div>
         </main>
@@ -126,19 +158,37 @@ export default function PaymentCardPage() {
     }
 
     setIsProcessing(true);
+    setApiError(null);
 
-    // Simulate payment processing
-    setTimeout(() => {
-      alert(
-        "Payment successful! Your order has been placed.\n\nOrder ID: #" +
-          Math.random().toString(36).substr(2, 9).toUpperCase() +
-          "\n\nThank you for your order!"
-      );
+    try {
+      // Create order in the backend
+      const response = await ordersApi.create({
+        userId: user?.id || "",
+        items: items.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+        addressId: addressId,
+        paymentMethod: "card",
+        deliveryNotes: formData.vat_reference
+          ? `VAT Reference: ${formData.vat_reference}`
+          : "",
+      });
 
-      clearBasket();
-      navigate("/products");
-      setIsProcessing(false);
-    }, 2000);
+      if (response.success && response.data) {
+        clearBasket();
+        alert(
+          `Payment successful! Your order has been placed.\n\nOrder ID: ${response.data.orderNumber}\n\nThank you for your order!`
+        );
+        navigate("/products");
+      } else {
+        setApiError(response.error || "Failed to create order. Please try again.");
+      }
+    } catch (err) {
+      setApiError("Network error. Please check your connection and try again.");
+    }
+
+    setIsProcessing(false);
   };
 
   const FormField = ({
@@ -224,6 +274,13 @@ export default function PaymentCardPage() {
                 <p className="text-muted-foreground">
                   All transactions are secure and encrypted
                 </p>
+
+                {/* API Error Display */}
+                {apiError && (
+                  <div className="bg-destructive/10 border border-destructive text-destructive p-4 rounded-lg">
+                    {apiError}
+                  </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Cardholder Name */}

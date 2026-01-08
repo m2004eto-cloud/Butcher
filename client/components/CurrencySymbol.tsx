@@ -1,7 +1,7 @@
 import React from "react";
 
 interface CurrencySymbolProps {
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   className?: string;
 }
 
@@ -10,6 +10,7 @@ export const CurrencySymbol: React.FC<CurrencySymbolProps> = ({
   className = "",
 }) => {
   const sizeClasses = {
+    xs: "w-2.5 h-2.5",
     sm: "w-3 h-3",
     md: "w-4 h-4",
     lg: "w-6 h-6",
@@ -38,7 +39,7 @@ export const CurrencySymbol: React.FC<CurrencySymbolProps> = ({
 
 interface PriceDisplayProps {
   price: number;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   className?: string;
 }
 

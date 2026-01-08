@@ -27,3 +27,17 @@ dist-ssr
 !.env
 .vercel
 .env*.local
+
+# Capacitor - Native build outputs (keep project files, ignore build artifacts)
+ios/App/App/public
+ios/App/Pods
+ios/DerivedData
+ios/build
+android/app/src/main/assets/public
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+*.apk
+*.aab
+*.ipa

@@ -24,15 +24,12 @@ export default function AdminLoginPage() {
     setError("");
     setIsLoading(true);
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    const success = loginAdmin(email, password);
+    const result = await loginAdmin(email, password);
     
-    if (success) {
+    if (result.success) {
       navigate("/admin/dashboard");
     } else {
-      setError("Invalid admin credentials");
+      setError(result.error || "Invalid admin credentials");
     }
     
     setIsLoading(false);

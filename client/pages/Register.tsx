@@ -81,6 +81,7 @@ export default function RegisterPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState({
     password: false,
     confirmPassword: false,
@@ -126,8 +127,9 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setApiError(null);
 
     if (!validateForm()) {
       return;
@@ -135,21 +137,25 @@ export default function RegisterPage() {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      register({
-        firstName: formData.firstName,
-        familyName: formData.familyName,
-        email: formData.email,
-        mobile: formData.mobile,
-        emirate: formData.emirate,
-        address: formData.address,
-        isVisitor: false,
-      });
+    // Call backend API for registration
+    const result = await register({
+      firstName: formData.firstName,
+      familyName: formData.familyName,
+      email: formData.email,
+      mobile: formData.mobile,
+      emirate: formData.emirate,
+      address: formData.address,
+      isVisitor: false,
+      password: formData.password,
+    });
 
-      setIsLoading(false);
+    if (result.success) {
       navigate("/products");
-    }, 500);
+    } else {
+      setApiError(result.error || "Registration failed. Please try again.");
+    }
+    
+    setIsLoading(false);
   };
 
   const handleChange = (
@@ -190,6 +196,13 @@ export default function RegisterPage() {
 
           {/* Register Form */}
           <form onSubmit={handleRegister} className="card-premium p-8 space-y-6">
+            {/* API Error Display */}
+            {apiError && (
+              <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg text-sm">
+                {apiError}
+              </div>
+            )}
+            
             {/* Personal Information */}
             <div>
               <h3 className="text-lg font-semibold text-foreground mb-4">
