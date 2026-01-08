@@ -133,12 +133,12 @@ export function AdminLayout({
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform transition-transform duration-200 ease-in-out lg:transform-none",
+          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform transition-transform duration-200 ease-in-out lg:transform-none flex flex-col",
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-700">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-700 flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <Store className="w-6 h-6" />
@@ -157,7 +157,7 @@ export function AdminLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="p-4 space-y-1">
+        <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
           {tabConfig.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -188,7 +188,7 @@ export function AdminLayout({
         </nav>
 
         {/* User section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700">
+        <div className="p-4 border-t border-slate-700 flex-shrink-0 mt-auto">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center">
               <span className="text-lg font-bold">
