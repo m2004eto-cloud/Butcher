@@ -248,45 +248,45 @@ function seedData() {
     });
   }
 
-  // Demo stock items
+  // Demo stock items (quantities in grams)
   demoProducts.forEach((product, i) => {
-    const qty = 50 + i * 10;
-    const reserved = i * 2;
+    const qty = 5000.000 + i * 1000.500; // Base 5kg + increments
+    const reserved = (i * 200.250);
     stockItems.set(product.id, {
       id: `stock_${product.id}`,
       productId: product.id,
       quantity: qty,
       reservedQuantity: reserved,
       availableQuantity: qty - reserved,
-      lowStockThreshold: 10,
-      reorderPoint: 20,
-      reorderQuantity: 50,
+      lowStockThreshold: 1000.000, // 1kg threshold
+      reorderPoint: 2000.000, // 2kg reorder point
+      reorderQuantity: 5000.000, // 5kg reorder quantity
       lastRestockedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
       updatedAt: new Date().toISOString(),
     });
   });
 
-  // Add a low stock item for demo
+  // Add a low stock item for demo (quantities in grams)
   stockItems.set('prod_low', {
     id: 'stock_prod_low',
     productId: 'prod_low',
-    quantity: 5,
-    reservedQuantity: 2,
-    availableQuantity: 3,
-    lowStockThreshold: 10,
-    reorderPoint: 20,
-    reorderQuantity: 50,
+    quantity: 500.500, // 500g
+    reservedQuantity: 200.250,
+    availableQuantity: 300.250, // Below 1kg threshold
+    lowStockThreshold: 1000.000, // 1kg
+    reorderPoint: 2000.000, // 2kg
+    reorderQuantity: 5000.000, // 5kg
     lastRestockedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date().toISOString(),
   });
 
-  // Demo stock movements
+  // Demo stock movements (quantities in grams)
   for (let i = 1; i <= 10; i++) {
     stockMovements.push({
       id: `mov_${i}`,
       productId: demoProducts[i % 6].id,
       type: i % 3 === 0 ? 'out' : 'in',
-      quantity: 5 + i,
+      quantity: 500.000 + (i * 100.500), // grams
       reason: i % 3 === 0 ? 'Customer order' : 'Restocked',
       createdAt: new Date(Date.now() - i * 6 * 60 * 60 * 1000).toISOString(),
     });

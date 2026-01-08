@@ -221,16 +221,16 @@ function InventoryTable({
               Product
             </th>
             <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
-              Quantity
+              Quantity (g)
             </th>
             <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
-              Reserved
+              Reserved (g)
             </th>
             <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
-              Available
+              Available (g)
             </th>
             <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
-              Threshold
+              Threshold (g)
             </th>
             <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
               Status
@@ -250,21 +250,21 @@ function InventoryTable({
                   <span className="font-mono text-sm">{item.productId}</span>
                 </td>
                 <td className="px-4 py-3 text-center font-medium">
-                  {item.quantity.toFixed(1)}
+                  {item.quantity.toFixed(3)} <span className="text-xs text-slate-400">g</span>
                 </td>
                 <td className="px-4 py-3 text-center text-slate-500">
-                  {item.reservedQuantity.toFixed(1)}
+                  {item.reservedQuantity.toFixed(3)} <span className="text-xs text-slate-400">g</span>
                 </td>
                 <td className="px-4 py-3 text-center">
                   <span className={cn(
                     "font-semibold",
                     isOut ? "text-red-600" : isLow ? "text-orange-600" : "text-green-600"
                   )}>
-                    {item.availableQuantity.toFixed(1)}
+                    {item.availableQuantity.toFixed(3)} <span className="text-xs text-slate-400">g</span>
                   </span>
                 </td>
                 <td className="px-4 py-3 text-center text-slate-500">
-                  {item.lowStockThreshold}
+                  {item.lowStockThreshold.toFixed(3)} <span className="text-xs text-slate-400">g</span>
                 </td>
                 <td className="px-4 py-3 text-center">
                   {isOut ? (
@@ -338,14 +338,14 @@ function AlertsList({
             <div>
               <p className="font-medium text-slate-900">{alert.productName}</p>
               <p className="text-sm text-slate-500">
-                Current: {alert.currentQuantity} • Threshold: {alert.threshold}
+                Current: {alert.currentQuantity.toFixed(3)}g • Threshold: {alert.threshold.toFixed(3)}g
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm text-slate-500">Suggested reorder</p>
-              <p className="font-semibold text-slate-900">{alert.suggestedReorderQuantity} units</p>
+              <p className="font-semibold text-slate-900">{alert.suggestedReorderQuantity.toFixed(3)}g</p>
             </div>
             <button
               onClick={() => onRestock(alert)}
@@ -402,7 +402,7 @@ function MovementHistory({ movements }: { movements: StockMovement[] }) {
             </div>
             <div className="text-right">
               <p className={cn("font-semibold", style.text)}>
-                {movement.type === "out" ? "-" : "+"}{movement.quantity}
+                {movement.type === "out" ? "-" : "+"}{movement.quantity.toFixed(3)}g
               </p>
               <p className="text-xs text-slate-500">
                 {new Date(movement.createdAt).toLocaleString()}
@@ -454,23 +454,25 @@ function RestockModal({
           <div>
             <p className="text-sm text-slate-500">Current Stock</p>
             <p className="font-medium">
-              {item.availableQuantity} available ({item.reservedQuantity} reserved)
+              {item.availableQuantity.toFixed(3)}g available ({item.reservedQuantity.toFixed(3)}g reserved)
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Quantity to Add *
+              Quantity to Add (grams) *
             </label>
             <input
               type="number"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              min="0.1"
-              step="0.1"
+              min="0.001"
+              step="0.001"
               required
+              placeholder="000.000"
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
+            <p className="text-xs text-slate-500 mt-1">Enter weight in grams (e.g., 500.000 for 500g)</p>
           </div>
 
           <div>
@@ -552,50 +554,53 @@ function ThresholdsModal({
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Low Stock Threshold
+              Low Stock Threshold (grams)
             </label>
             <input
               type="number"
               value={lowThreshold}
               onChange={(e) => setLowThreshold(e.target.value)}
               min="0"
-              step="0.1"
+              step="0.001"
               required
+              placeholder="000.000"
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
-            <p className="text-xs text-slate-500 mt-1">Alert when available stock falls below this</p>
+            <p className="text-xs text-slate-500 mt-1">Alert when available stock falls below this (in grams)</p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Reorder Point
+              Reorder Point (grams)
             </label>
             <input
               type="number"
               value={reorderPoint}
               onChange={(e) => setReorderPoint(e.target.value)}
               min="0"
-              step="0.1"
+              step="0.001"
               required
+              placeholder="000.000"
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
-            <p className="text-xs text-slate-500 mt-1">Recommended to reorder when stock reaches this level</p>
+            <p className="text-xs text-slate-500 mt-1">Recommended to reorder when stock reaches this level (in grams)</p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
-              Reorder Quantity
+              Reorder Quantity (grams)
             </label>
             <input
               type="number"
               value={reorderQty}
               onChange={(e) => setReorderQty(e.target.value)}
-              min="1"
-              step="0.1"
+              min="0.001"
+              step="0.001"
               required
+              placeholder="000.000"
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             />
-            <p className="text-xs text-slate-500 mt-1">Suggested quantity to order</p>
+            <p className="text-xs text-slate-500 mt-1">Suggested quantity to order (in grams)</p>
           </div>
 
           <div className="flex gap-3 pt-4">
