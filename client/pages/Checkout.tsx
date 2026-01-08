@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -8,6 +8,16 @@ import { useLanguage } from "@/context/LanguageContext";
 import { PriceDisplay } from "@/components/CurrencySymbol";
 import { ordersApi, deliveryApi } from "@/lib/api";
 import type { Address } from "@shared/api";
+
+// Extend Window interface for Google Maps
+declare global {
+  interface Window {
+    google?: typeof google;
+  }
+}
+
+// Google Maps API Key - replace with your actual key
+const GOOGLE_MAPS_API_KEY = "AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8";
 
 type PaymentMethod = "card" | "cod" | null;
 
@@ -22,6 +32,8 @@ interface AddressFormData {
   floor: string;
   apartment: string;
   isDefault: boolean;
+  latitude?: number;
+  longitude?: number;
 }
 
 const EMPTY_ADDRESS_FORM: AddressFormData = {
@@ -35,7 +47,224 @@ const EMPTY_ADDRESS_FORM: AddressFormData = {
   floor: "",
   apartment: "",
   isDefault: false,
+  latitude: undefined,
+  longitude: undefined,
 };
+
+// UAE center coordinates
+const UAE_CENTER = { lat: 25.2048, lng: 55.2708 }; // Dubai
+
+// Load Google Maps Script
+function useGoogleMaps() {
+  const [isLoaded, setIsLoaded] = useState(false);
+  
+  useEffect(() => {
+    if (window.google?.maps) {
+      setIsLoaded(true);
+      return;
+    }
+    
+    const existingScript = document.getElementById("google-maps-script");
+    if (existingScript) {
+      existingScript.addEventListener("load", () => setIsLoaded(true));
+      return;
+    }
+    
+    const script = document.createElement("script");
+    script.id = "google-maps-script";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setIsLoaded(true);
+    document.head.appendChild(script);
+  }, []);
+  
+  return isLoaded;
+}
+
+// Map Picker Component
+function MapPicker({ 
+  latitude, 
+  longitude, 
+  onLocationSelect 
+}: { 
+  latitude?: number; 
+  longitude?: number; 
+  onLocationSelect: (lat: number, lng: number, address?: string) => void;
+}) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const googleMapRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
+  const isLoaded = useGoogleMaps();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+
+  const updateMarker = useCallback((lat: number, lng: number) => {
+    if (!googleMapRef.current) return;
+    
+    const position = { lat, lng };
+    
+    if (markerRef.current) {
+      markerRef.current.setPosition(position);
+    } else {
+      markerRef.current = new google.maps.Marker({
+        position,
+        map: googleMapRef.current,
+        draggable: true,
+        animation: google.maps.Animation.DROP,
+      });
+      
+      // Handle marker drag
+      markerRef.current.addListener("dragend", () => {
+        const pos = markerRef.current?.getPosition();
+        if (pos) {
+          onLocationSelect(pos.lat(), pos.lng());
+          // Reverse geocode to get address
+          const geocoder = new google.maps.Geocoder();
+          geocoder.geocode({ location: pos }, (results, status) => {
+            if (status === "OK" && results?.[0]) {
+              onLocationSelect(pos.lat(), pos.lng(), results[0].formatted_address);
+            }
+          });
+        }
+      });
+    }
+    
+    googleMapRef.current.panTo(position);
+  }, [onLocationSelect]);
+
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+    
+    const initialPosition = latitude && longitude 
+      ? { lat: latitude, lng: longitude }
+      : UAE_CENTER;
+    
+    googleMapRef.current = new google.maps.Map(mapRef.current, {
+      center: initialPosition,
+      zoom: latitude && longitude ? 16 : 12,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+    });
+    
+    // Add click listener
+    googleMapRef.current.addListener("click", (e: google.maps.MapMouseEvent) => {
+      if (e.latLng) {
+        updateMarker(e.latLng.lat(), e.latLng.lng());
+        onLocationSelect(e.latLng.lat(), e.latLng.lng());
+        
+        // Reverse geocode
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: e.latLng }, (results, status) => {
+          if (status === "OK" && results?.[0]) {
+            onLocationSelect(e.latLng!.lat(), e.latLng!.lng(), results[0].formatted_address);
+          }
+        });
+      }
+    });
+    
+    // Add initial marker if coordinates exist
+    if (latitude && longitude) {
+      updateMarker(latitude, longitude);
+    }
+  }, [isLoaded, latitude, longitude, onLocationSelect, updateMarker]);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim() || !googleMapRef.current) return;
+    
+    setIsSearching(true);
+    const geocoder = new google.maps.Geocoder();
+    
+    geocoder.geocode({ address: searchQuery + ", UAE" }, (results, status) => {
+      setIsSearching(false);
+      if (status === "OK" && results?.[0]?.geometry?.location) {
+        const location = results[0].geometry.location;
+        updateMarker(location.lat(), location.lng());
+        googleMapRef.current?.setZoom(16);
+        onLocationSelect(location.lat(), location.lng(), results[0].formatted_address);
+      }
+    });
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser");
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        updateMarker(lat, lng);
+        googleMapRef.current?.setZoom(16);
+        
+        // Reverse geocode
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+          if (status === "OK" && results?.[0]) {
+            onLocationSelect(lat, lng, results[0].formatted_address);
+          } else {
+            onLocationSelect(lat, lng);
+          }
+        });
+      },
+      () => {
+        alert("Unable to retrieve your location");
+      }
+    );
+  };
+
+  if (!isLoaded) {
+    return (
+      <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Search Box */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          placeholder="Search for a location..."
+          className="flex-1 px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-background text-foreground text-sm"
+        />
+        <button
+          type="button"
+          onClick={handleSearch}
+          disabled={isSearching}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+        >
+          {isSearching ? "..." : "Search"}
+        </button>
+        <button
+          type="button"
+          onClick={handleGetCurrentLocation}
+          className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/90"
+          title="Use current location"
+        >
+          📍
+        </button>
+      </div>
+      
+      {/* Map Container */}
+      <div 
+        ref={mapRef} 
+        className="w-full h-64 rounded-lg border border-input overflow-hidden"
+      />
+      
+      <p className="text-xs text-muted-foreground text-center">
+        Click on the map or drag the marker to set your exact delivery location
+      </p>
+    </div>
+  );
+}
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -152,6 +381,8 @@ export default function CheckoutPage() {
       floor: address.floor || "",
       apartment: address.apartment || "",
       isDefault: address.isDefault,
+      latitude: address.latitude,
+      longitude: address.longitude,
     });
     setShowAddressModal(true);
   };
@@ -162,6 +393,20 @@ export default function CheckoutPage() {
     setAddressForm(EMPTY_ADDRESS_FORM);
   };
 
+  const handleLocationSelect = (lat: number, lng: number, formattedAddress?: string) => {
+    setAddressForm(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+    }));
+    
+    // Optionally auto-fill address fields from geocoded address
+    if (formattedAddress) {
+      // You could parse the address here to auto-fill fields
+      console.log("Selected location:", formattedAddress);
+    }
+  };
+
   const handleSaveAddress = async () => {
     if (!user?.id) return;
     
@@ -169,6 +414,12 @@ export default function CheckoutPage() {
     if (!addressForm.fullName || !addressForm.mobile || !addressForm.emirate || 
         !addressForm.area || !addressForm.street || !addressForm.building) {
       setError("Please fill in all required fields");
+      return;
+    }
+    
+    // Validate location
+    if (!addressForm.latitude || !addressForm.longitude) {
+      setError("Please select your location on the map");
       return;
     }
 
@@ -189,6 +440,8 @@ export default function CheckoutPage() {
           floor: addressForm.floor || undefined,
           apartment: addressForm.apartment || undefined,
           isDefault: addressForm.isDefault,
+          latitude: addressForm.latitude,
+          longitude: addressForm.longitude,
         });
 
         if (response.success && response.data) {
@@ -211,6 +464,8 @@ export default function CheckoutPage() {
           floor: addressForm.floor || undefined,
           apartment: addressForm.apartment || undefined,
           isDefault: addressForm.isDefault || addresses.length === 0,
+          latitude: addressForm.latitude,
+          longitude: addressForm.longitude,
         });
 
         if (response.success && response.data) {
@@ -811,6 +1066,31 @@ export default function CheckoutPage() {
                 <label htmlFor="isDefault" className="text-sm font-medium text-foreground">
                   Set as default delivery address
                 </label>
+              </div>
+
+              {/* Map Location Picker */}
+              <div className="pt-4 border-t border-border">
+                <label className="block text-sm font-medium text-foreground mb-3">
+                  📍 Pin Your Delivery Location *
+                </label>
+                <MapPicker
+                  latitude={addressForm.latitude}
+                  longitude={addressForm.longitude}
+                  onLocationSelect={handleLocationSelect}
+                />
+                {addressForm.latitude && addressForm.longitude && (
+                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm font-medium">Location confirmed</span>
+                    </div>
+                    <p className="text-xs text-green-600 dark:text-green-500 mt-1">
+                      Lat: {addressForm.latitude.toFixed(6)}, Lng: {addressForm.longitude.toFixed(6)}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Buttons */}
