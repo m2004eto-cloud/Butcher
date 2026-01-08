@@ -34,7 +34,20 @@ interface AuthContextType {
   loginWithCredentials: (mobile: string, password: string) => Promise<{ success: boolean; error?: string }>;
   loginAdmin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  register: (user: Omit<User, "id"> & { password: string }) => Promise<{ success: boolean; error?: string }>;
+  register: (user: Omit<User, "id"> & { password: string; deliveryAddress?: {
+    label: string;
+    fullName: string;
+    mobile: string;
+    emirate: string;
+    area: string;
+    street: string;
+    building: string;
+    floor?: string;
+    apartment?: string;
+    latitude?: number;
+    longitude?: number;
+    isDefault: boolean;
+  } }) => Promise<{ success: boolean; error?: string }>;
   updateUser: (user: Partial<User>) => void;
   requestPasswordReset: (email: string, mobile: string) => { success: boolean; error?: string };
   verifyResetToken: (token: string) => { valid: boolean; email?: string };
@@ -193,7 +206,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem("basket");
   };
 
-  const register = async (newUser: Omit<User, "id"> & { password: string }): Promise<{ success: boolean; error?: string }> => {
+  const register = async (newUser: Omit<User, "id"> & { password: string; deliveryAddress?: {
+    label: string;
+    fullName: string;
+    mobile: string;
+    emirate: string;
+    area: string;
+    street: string;
+    building: string;
+    floor?: string;
+    apartment?: string;
+    latitude?: number;
+    longitude?: number;
+    isDefault: boolean;
+  } }): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await authApi.register({
         email: newUser.email,
@@ -202,6 +228,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         firstName: newUser.firstName,
         familyName: newUser.familyName,
         emirate: newUser.emirate,
+        address: newUser.address,
+        deliveryAddress: newUser.deliveryAddress,
       });
 
       if (response.success && response.data) {

@@ -120,6 +120,21 @@ export const authApi = {
     firstName: string;
     familyName: string;
     emirate: string;
+    address?: string;
+    deliveryAddress?: {
+      label: string;
+      fullName: string;
+      mobile: string;
+      emirate: string;
+      area: string;
+      street: string;
+      building: string;
+      floor?: string;
+      apartment?: string;
+      latitude?: number;
+      longitude?: number;
+      isDefault: boolean;
+    };
   }) =>
     fetchApi<User>("/users", {
       method: "POST",

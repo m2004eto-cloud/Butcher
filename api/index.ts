@@ -432,7 +432,7 @@ function createApp() {
   // Register user
   app.post('/api/users', (req, res) => {
     try {
-      const { email, mobile, password, firstName, familyName, emirate } = req.body;
+      const { email, mobile, password, firstName, familyName, emirate, address, deliveryAddress } = req.body;
       
       if (!email || !mobile || !password || !firstName || !familyName || !emirate) {
         return res.status(400).json({ success: false, error: 'All fields are required' });
@@ -466,6 +466,7 @@ function createApp() {
         isActive: true,
         isVerified: false,
         emirate,
+        address,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         preferences: {
@@ -478,6 +479,30 @@ function createApp() {
       };
 
       users.set(userId, newUser);
+
+      // Create default delivery address if provided
+      if (deliveryAddress) {
+        const addressId = `addr_${Date.now()}`;
+        const newAddress: Address = {
+          id: addressId,
+          userId: userId,
+          label: deliveryAddress.label || 'Home',
+          fullName: deliveryAddress.fullName || `${firstName} ${familyName}`,
+          mobile: deliveryAddress.mobile || mobile,
+          emirate: deliveryAddress.emirate || emirate,
+          area: deliveryAddress.area || '',
+          street: deliveryAddress.street || '',
+          building: deliveryAddress.building || '',
+          floor: deliveryAddress.floor,
+          apartment: deliveryAddress.apartment,
+          latitude: deliveryAddress.latitude,
+          longitude: deliveryAddress.longitude,
+          isDefault: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        addresses.set(addressId, newAddress);
+      }
 
       res.status(201).json({
         success: true,
