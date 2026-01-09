@@ -11,6 +11,7 @@ import { BasketProvider } from "@/context/BasketContext";
 import { LanguageProvider } from "@/context/LanguageContext";
 import { ProductsProvider } from "@/context/ProductsContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { ChatProvider } from "@/context/ChatContext";
 import { useCapacitorInit } from "@/hooks/useCapacitor";
 import { Layout } from "@/components/Layout";
 
@@ -38,7 +39,8 @@ const App = () => {
       <LanguageProvider>
         <AuthProvider>
           <NotificationProvider>
-            <ProductsProvider>
+            <ChatProvider>
+              <ProductsProvider>
               <BasketProvider>
                 <TooltipProvider>
                   <Toaster />
@@ -72,6 +74,7 @@ const App = () => {
                 </TooltipProvider>
               </BasketProvider>
             </ProductsProvider>
+            </ChatProvider>
           </NotificationProvider>
         </AuthProvider>
       </LanguageProvider>

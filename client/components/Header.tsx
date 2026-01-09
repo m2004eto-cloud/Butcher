@@ -5,6 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useBasket } from "@/context/BasketContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useNotifications, formatRelativeTime, Notification } from "@/context/NotificationContext";
+import { useUserChat } from "@/context/ChatContext";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 interface HeaderProps {
@@ -40,11 +41,13 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Notification | null>(null);
   const [showChat, setShowChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState<{ id: string; text: string; sender: "user" | "admin"; timestamp: Date }[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const notificationRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
+
+  // Use chat context for user messages
+  const { messages: chatMessages, unreadCount: chatUnreadCount, sendMessage: sendChatMessage, markAsRead: markChatAsRead } = useUserChat(user?.id);
 
   // Filter notifications for user (exclude admin-only types like stock)
   const userNotifications = notifications.filter(n => 
@@ -67,20 +70,12 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Load chat messages from localStorage
+  // Mark messages as read when chat is opened
   useEffect(() => {
-    if (user?.id) {
-      const savedMessages = localStorage.getItem(`chat_messages_${user.id}`);
-      if (savedMessages) {
-        try {
-          const parsed = JSON.parse(savedMessages);
-          setChatMessages(parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })));
-        } catch (e) {
-          console.error("Failed to parse chat messages", e);
-        }
-      }
+    if (showChat && chatUnreadCount > 0) {
+      markChatAsRead();
     }
-  }, [user?.id]);
+  }, [showChat, chatUnreadCount, markChatAsRead]);
 
   // Scroll to bottom when new messages arrive
   useEffect(() => {
@@ -93,34 +88,11 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
   const handleSendMessage = () => {
     if (!newMessage.trim() || !user?.id) return;
 
-    const message = {
-      id: `msg_${Date.now()}`,
-      text: newMessage.trim(),
-      sender: "user" as const,
-      timestamp: new Date(),
-    };
-
-    const updatedMessages = [...chatMessages, message];
-    setChatMessages(updatedMessages);
-    localStorage.setItem(`chat_messages_${user.id}`, JSON.stringify(updatedMessages));
+    const userName = `${user.firstName || ""} ${user.familyName || ""}`.trim() || "Customer";
+    const userEmail = user.email || "";
+    
+    sendChatMessage(userName, userEmail, newMessage.trim());
     setNewMessage("");
-
-    // Simulate admin auto-reply after 1 second
-    setTimeout(() => {
-      const autoReply = {
-        id: `msg_${Date.now()}`,
-        text: language === "ar" 
-          ? "شكراً لرسالتك! سيتواصل معك فريق الدعم قريباً."
-          : "Thank you for your message! Our support team will get back to you shortly.",
-        sender: "admin" as const,
-        timestamp: new Date(),
-      };
-      setChatMessages(prev => {
-        const updated = [...prev, autoReply];
-        localStorage.setItem(`chat_messages_${user.id}`, JSON.stringify(updated));
-        return updated;
-      });
-    }, 1000);
   };
 
   const handleNotificationClick = (notification: Notification) => {
@@ -179,6 +151,11 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
                   aria-label="Chat with Admin"
                 >
                   <MessageCircle className="w-5 h-5 text-primary" />
+                  {chatUnreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                      {chatUnreadCount > 9 ? "9+" : chatUnreadCount}
+                    </span>
+                  )}
                 </button>
 
                 {/* Chat Dropdown */}
@@ -236,7 +213,7 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
                               <p className={`text-xs mt-1 ${
                                 msg.sender === "user" ? "text-white/70" : "text-gray-400"
                               }`}>
-                                {msg.timestamp.toLocaleTimeString(language === "ar" ? "ar-AE" : "en-US", {
+                                {new Date(msg.timestamp).toLocaleTimeString(language === "ar" ? "ar-AE" : "en-US", {
                                   hour: "2-digit",
                                   minute: "2-digit",
                                 })}

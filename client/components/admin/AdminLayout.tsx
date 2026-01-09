@@ -26,8 +26,12 @@ import {
   CheckCheck,
   Trash2,
   Factory,
+  MessageCircle,
+  Send,
+  ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAdminChat } from "@/context/ChatContext";
 
 export type AdminTab =
   | "dashboard"
@@ -79,6 +83,37 @@ export function AdminLayout({
   } = useNotifications();
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [selectedChatUserId, setSelectedChatUserId] = useState<string | null>(null);
+  const [adminMessage, setAdminMessage] = useState("");
+  const chatMessagesRef = React.useRef<HTMLDivElement>(null);
+
+  // Use admin chat hook
+  const { chats, sendMessage: sendAdminMessage, markAsRead: markChatAsRead, totalUnread: chatTotalUnread } = useAdminChat();
+  
+  // Get selected chat
+  const selectedChat = chats.find(c => c.userId === selectedChatUserId);
+
+  // Scroll to bottom when messages change or chat is opened
+  useEffect(() => {
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+    }
+  }, [selectedChat?.messages, chatOpen]);
+
+  // Mark messages as read when a chat is selected
+  useEffect(() => {
+    if (selectedChatUserId && selectedChat && selectedChat.unreadCount > 0) {
+      markChatAsRead(selectedChatUserId);
+    }
+  }, [selectedChatUserId, selectedChat, markChatAsRead]);
+
+  // Handle sending admin message
+  const handleSendAdminMessage = () => {
+    if (!adminMessage.trim() || !selectedChatUserId) return;
+    sendAdminMessage(selectedChatUserId, adminMessage.trim());
+    setAdminMessage("");
+  };
 
   // Seed some initial demo notifications if none exist
   useEffect(() => {
@@ -264,10 +299,172 @@ export function AdminLayout({
               </button>
             </div>
 
+            {/* Admin Chat */}
+            <div className="relative">
+              <button 
+                onClick={() => {
+                  setChatOpen(!chatOpen);
+                  setNotificationOpen(false);
+                }}
+                className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <MessageCircle className="w-5 h-5 text-slate-600" />
+                {chatTotalUnread > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-green-500 text-white text-xs font-bold rounded-full px-1">
+                    {chatTotalUnread > 99 ? '99+' : chatTotalUnread}
+                  </span>
+                )}
+              </button>
+
+              {/* Chat Panel */}
+              {chatOpen && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => {
+                      setChatOpen(false);
+                      setSelectedChatUserId(null);
+                    }} 
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-[450px] bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden">
+                    <div className="p-3 border-b border-slate-100 bg-slate-50 flex items-center gap-3">
+                      {selectedChatUserId && (
+                        <button
+                          onClick={() => setSelectedChatUserId(null)}
+                          className="p-1 hover:bg-slate-200 rounded transition-colors"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                      )}
+                      <h3 className="font-semibold text-slate-900">
+                        {selectedChat ? selectedChat.userName : (language === 'ar' ? 'محادثات العملاء' : 'Customer Chats')}
+                      </h3>
+                      {chatTotalUnread > 0 && !selectedChatUserId && (
+                        <span className="ml-auto text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                          {chatTotalUnread} {language === 'ar' ? 'جديد' : 'new'}
+                        </span>
+                      )}
+                    </div>
+
+                    {!selectedChatUserId ? (
+                      /* User list */
+                      <div className="max-h-96 overflow-y-auto">
+                        {chats.length > 0 ? (
+                          chats
+                            .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime())
+                            .map((chat) => (
+                            <button
+                              key={chat.userId}
+                              onClick={() => setSelectedChatUserId(chat.userId)}
+                              className={cn(
+                                "w-full p-4 border-b border-slate-100 hover:bg-slate-50 transition-colors text-left",
+                                chat.unreadCount > 0 && "bg-green-50/50"
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <span className="font-medium text-slate-700">
+                                    {chat.userName[0]?.toUpperCase() || 'U'}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between">
+                                    <p className="font-medium text-slate-900 truncate">{chat.userName}</p>
+                                    {chat.unreadCount > 0 && (
+                                      <span className="flex-shrink-0 bg-green-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                        {chat.unreadCount}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-slate-500 truncate">
+                                    {chat.messages[chat.messages.length - 1]?.text || ''}
+                                  </p>
+                                  <p className="text-xs text-slate-400 mt-1">
+                                    {new Date(chat.lastMessageAt).toLocaleString(language === 'ar' ? 'ar-SA' : 'en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="p-8 text-center text-slate-500">
+                            <MessageCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                            <p>{language === 'ar' ? 'لا توجد محادثات بعد' : 'No chats yet'}</p>
+                            <p className="text-sm mt-1">{language === 'ar' ? 'ستظهر رسائل العملاء هنا' : 'Customer messages will appear here'}</p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Chat conversation */
+                      <div className="flex flex-col h-96">
+                        {/* Messages */}
+                        <div 
+                          ref={chatMessagesRef}
+                          className="flex-1 overflow-y-auto p-4 space-y-3"
+                        >
+                          {selectedChat?.messages.map((msg) => (
+                            <div
+                              key={msg.id}
+                              className={cn(
+                                "max-w-[80%] rounded-lg p-3",
+                                msg.sender === 'admin'
+                                  ? "bg-primary text-white ml-auto rounded-br-none"
+                                  : "bg-slate-100 text-slate-900 rounded-bl-none"
+                              )}
+                            >
+                              <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                              <p className={cn(
+                                "text-xs mt-1",
+                                msg.sender === 'admin' ? "text-white/70" : "text-slate-400"
+                              )}>
+                                {new Date(msg.timestamp).toLocaleTimeString(language === 'ar' ? 'ar-SA' : 'en-US', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Input */}
+                        <div className="p-3 border-t border-slate-100 bg-slate-50">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={adminMessage}
+                              onChange={(e) => setAdminMessage(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && handleSendAdminMessage()}
+                              placeholder={language === 'ar' ? 'اكتب رسالتك...' : 'Type your message...'}
+                              className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                            />
+                            <button
+                              onClick={handleSendAdminMessage}
+                              disabled={!adminMessage.trim()}
+                              className="p-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <Send className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Notifications */}
             <div className="relative">
               <button 
-                onClick={() => setNotificationOpen(!notificationOpen)}
+                onClick={() => {
+                  setNotificationOpen(!notificationOpen);
+                  setChatOpen(false);
+                }}
                 className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 <Bell className="w-5 h-5 text-slate-600" />
