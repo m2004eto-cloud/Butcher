@@ -71,9 +71,9 @@ function MapPicker({
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   // Reverse geocode using Nominatim (free)
   const reverseGeocode = async (lat: number, lng: number): Promise<string | undefined> => {
@@ -89,7 +89,57 @@ function MapPicker({
     }
   };
 
-  // Initialize map
+  // Auto-locate user's position
+  const autoLocate = async () => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude: lat, longitude: lng } = position.coords;
+        
+        if (leafletMapRef.current) {
+          if (markerRef.current) {
+            markerRef.current.setLatLng([lat, lng]);
+          } else {
+            markerRef.current = L.marker([lat, lng], { draggable: true })
+              .addTo(leafletMapRef.current);
+            
+            markerRef.current.on("dragend", async () => {
+              const pos = markerRef.current?.getLatLng();
+              if (pos) {
+                const address = await reverseGeocode(pos.lat, pos.lng);
+                onLocationSelect(pos.lat, pos.lng, address);
+              }
+            });
+          }
+          leafletMapRef.current.setView([lat, lng], 16);
+        }
+        
+        const address = await reverseGeocode(lat, lng);
+        onLocationSelect(lat, lng, address);
+        setIsLocating(false);
+      },
+      (error) => {
+        setIsLocating(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationError("Location access denied. Please enable location permissions.");
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          setLocationError("Location unavailable. Please try again.");
+        } else {
+          setLocationError("Unable to get location. You can click on the map to set it manually.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  // Initialize map and auto-locate
   useEffect(() => {
     if (!mapRef.current || leafletMapRef.current) return;
 
@@ -145,6 +195,11 @@ function MapPicker({
 
     setIsMapReady(true);
 
+    // Auto-locate if no coordinates provided
+    if (!latitude || !longitude) {
+      setTimeout(() => autoLocate(), 500);
+    }
+
     return () => {
       if (leafletMapRef.current) {
         leafletMapRef.current.remove();
@@ -168,100 +223,40 @@ function MapPicker({
     }
   }, [latitude, longitude, isMapReady]);
 
-  // Search using Nominatim (free)
-  const handleSearch = async () => {
-    if (!searchQuery.trim() || !leafletMapRef.current) return;
-    
-    setIsSearching(true);
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery + ", UAE")}&limit=1`,
-        { headers: { "Accept-Language": "en" } }
-      );
-      const results = await response.json();
-      
-      if (results.length > 0) {
-        const { lat, lon, display_name } = results[0];
-        const latitude = parseFloat(lat);
-        const longitude = parseFloat(lon);
-        
-        if (markerRef.current) {
-          markerRef.current.setLatLng([latitude, longitude]);
-        } else {
-          markerRef.current = L.marker([latitude, longitude], { draggable: true })
-            .addTo(leafletMapRef.current);
-        }
-        
-        leafletMapRef.current.setView([latitude, longitude], 16);
-        onLocationSelect(latitude, longitude, display_name);
-      } else {
-        alert("Location not found. Try a different search term.");
-      }
-    } catch {
-      alert("Search failed. Please try again.");
-    }
-    setIsSearching(false);
-  };
-
-  const handleGetCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
-      return;
-    }
-    
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude: lat, longitude: lng } = position.coords;
-        
-        if (leafletMapRef.current) {
-          if (markerRef.current) {
-            markerRef.current.setLatLng([lat, lng]);
-          } else {
-            markerRef.current = L.marker([lat, lng], { draggable: true })
-              .addTo(leafletMapRef.current);
-          }
-          leafletMapRef.current.setView([lat, lng], 16);
-        }
-        
-        const address = await reverseGeocode(lat, lng);
-        onLocationSelect(lat, lng, address);
-      },
-      () => {
-        alert("Unable to retrieve your location. Please allow location access.");
-      },
-      { enableHighAccuracy: true }
-    );
-  };
-
   return (
     <div className="space-y-3">
-      {/* Search Box */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          placeholder="Search for a location..."
-          className="flex-1 px-4 py-2 border border-input rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-background text-foreground text-sm"
-        />
+      {/* Location Status */}
+      {isLocating && (
+        <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
+          <span className="text-sm text-blue-700 dark:text-blue-400">Detecting your location...</span>
+        </div>
+      )}
+
+      {locationError && (
+        <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+          <p className="text-sm text-amber-700 dark:text-amber-400">{locationError}</p>
+          <button
+            type="button"
+            onClick={autoLocate}
+            className="mt-2 text-sm text-primary font-medium hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {/* Relocate Button */}
+      {!isLocating && !locationError && (
         <button
           type="button"
-          onClick={handleSearch}
-          disabled={isSearching}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+          onClick={autoLocate}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors"
         >
-          {isSearching ? "..." : "Search"}
+          <span>📍</span>
+          <span>Use my current location</span>
         </button>
-        <button
-          type="button"
-          onClick={handleGetCurrentLocation}
-          className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-medium hover:bg-secondary/90"
-          title="Use current location"
-        >
-          📍
-        </button>
-      </div>
+      )}
       
       {/* Map Container */}
       <div 
@@ -270,7 +265,7 @@ function MapPicker({
       />
       
       <p className="text-xs text-muted-foreground text-center">
-        Click on the map or drag the marker to set your exact delivery location
+        Your location is detected automatically. Click on the map or drag the marker to adjust.
       </p>
     </div>
   );
