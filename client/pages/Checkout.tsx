@@ -815,11 +815,26 @@ export default function CheckoutPage() {
       // Create order in backend
       const response = await ordersApi.create({
         userId: user?.id || "",
-        items: items.map((item) => ({
-          productId: item.productId || item.id.split('_')[0], // Use productId, fallback to extracting from id
-          quantity: item.quantity,
-          notes: item.notes,
-        })),
+        items: items.map((item) => {
+          // Extract original product ID: if productId exists use it, otherwise
+          // remove the timestamp suffix we added (last underscore segment if it's a number)
+          let productId = item.productId;
+          if (!productId) {
+            const parts = item.id.split('_');
+            const lastPart = parts[parts.length - 1];
+            // If last part is a timestamp (all digits), remove it
+            if (/^\d+$/.test(lastPart) && parts.length > 2) {
+              productId = parts.slice(0, -1).join('_');
+            } else {
+              productId = item.id;
+            }
+          }
+          return {
+            productId,
+            quantity: item.quantity,
+            notes: item.notes,
+          };
+        }),
         addressId: selectedAddressId,
         paymentMethod: "cod",
         deliveryNotes: deliveryNotes,
