@@ -111,6 +111,7 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
   const [showForm, setShowForm] = useState(false);
   const [showPoForm, setShowPoForm] = useState(false);
   const [poItems, setPoItems] = useState<PurchaseOrderDraftItem[]>([{ productId: "", quantity: 0, unitCost: 0 }]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [form, setForm] = useState<SupplierFormState>({
     name: "",
     nameAr: "",
@@ -329,7 +330,7 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
   };
 
   const handleNotifications = () => {
-    window.alert("No new supplier notifications");
+    setNotificationsOpen((o) => !o);
   };
 
   const promptAddContact = async () => {
@@ -360,19 +361,39 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
     });
   };
 
+  const buildNotifications = () => {
+    const items = [] as { id: string; title: string; message: string; meta: string }[];
+    if (stats.pendingOrders > 0) {
+      items.push({
+        id: "pending-pos",
+        title: "Pending purchase orders",
+        message: `${stats.pendingOrders} order(s) awaiting action` ,
+        meta: "Suppliers • Compliance"
+      });
+    }
+    purchaseOrders.slice(0, 5).forEach((po) => {
+      items.push({
+        id: po.id,
+        title: `${po.orderNumber} (${po.status})`,
+        message: `${po.items.length} items • ${formatCurrency(po.total)}`,
+        meta: formatDate(po.orderDate),
+      });
+    });
+    if (selected && selected.status === "pending") {
+      items.push({
+        id: "supplier-pending",
+        title: "Supplier pending approval",
+        message: `${selected.name} requires activation`,
+        meta: "KYC • Verification"
+      });
+    }
+    return items;
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-            <Factory className="w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">Suppliers</h3>
-            <p className="text-sm text-slate-500">International supplier lifecycle: onboarding, scoring, compliance, and POs.</p>
-          </div>
-        </div>
-        <div className="flex gap-2 items-center">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2 items-center">
           <button
             onClick={handleNotifications}
             className="relative p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600"
@@ -413,6 +434,29 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
         <StatCard label="Pending" value={stats.pendingSuppliers} icon={AlertCircle} tone="amber" />
         <StatCard label="Total Spend" value={formatCurrency(stats.totalSpent)} icon={BadgeDollarSign} tone="blue" />
       </div>
+
+      {notificationsOpen && (
+        <div className="relative z-10">
+          <div className="absolute right-0 mt-1 w-full md:w-96 bg-white border border-slate-200 shadow-xl rounded-xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
+              <div className="font-semibold text-slate-900 flex items-center gap-2"><Bell className="w-4 h-4" /> Supplier Notifications</div>
+              <button onClick={() => setNotificationsOpen(false)} className="text-xs text-slate-500 hover:text-slate-700">Close</button>
+            </div>
+            <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+              {buildNotifications().length === 0 && (
+                <div className="px-4 py-6 text-sm text-slate-500">No notifications</div>
+              )}
+              {buildNotifications().map((n) => (
+                <div key={n.id} className="px-4 py-3 text-sm">
+                  <div className="font-semibold text-slate-900">{n.title}</div>
+                  <div className="text-slate-600">{n.message}</div>
+                  <div className="text-xs text-slate-400 mt-1">{n.meta}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="border-b border-slate-200 p-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
