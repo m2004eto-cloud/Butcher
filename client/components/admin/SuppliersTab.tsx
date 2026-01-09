@@ -24,6 +24,8 @@ import {
   BadgeDollarSign,
   CalendarClock,
   Loader2,
+  Bell,
+  FileText,
 } from "lucide-react";
 import { suppliersApi } from "@/lib/api";
 import type {
@@ -322,6 +324,14 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
     }
   };
 
+  const handleViewInvoices = () => {
+    onNavigate?.("orders");
+  };
+
+  const handleNotifications = () => {
+    window.alert("No new supplier notifications");
+  };
+
   const promptAddContact = async () => {
     const name = window.prompt("Contact name");
     if (!name) return;
@@ -362,7 +372,26 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
             <p className="text-sm text-slate-500">International supplier lifecycle: onboarding, scoring, compliance, and POs.</p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 items-center">
+          <button
+            onClick={handleNotifications}
+            className="relative p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600"
+            title="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+            {stats.pendingOrders > 0 && (
+              <span className="absolute -top-1 -right-1 px-1.5 min-w-[18px] h-[18px] text-[11px] bg-red-500 text-white rounded-full flex items-center justify-center">
+                {stats.pendingOrders}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={handleViewInvoices}
+            className="p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600"
+            title="View invoices"
+          >
+            <FileText className="w-5 h-5" />
+          </button>
           <button
             onClick={fetchSuppliers}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
