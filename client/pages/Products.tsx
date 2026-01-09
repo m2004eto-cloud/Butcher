@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { ProductCard } from "@/components/ProductCard";
 import { useAuth } from "@/context/AuthContext";
 import { useBasket } from "@/context/BasketContext";
@@ -45,13 +43,10 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Header showBasketIcon={true} />
-
-      <main className="flex-1 py-12 px-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Page Header */}
-          <div className="mb-8">
+    <div className="py-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Page Header */}
+        <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground mb-2">
               {t("products.title")}
             </h1>
@@ -122,10 +117,4 @@ export default function ProductsPage() {
               </button>
             </div>
           )}
-        </div>
-      </main>
-
-      <Footer />
-    </div>
-  );
-}
+      </div>
