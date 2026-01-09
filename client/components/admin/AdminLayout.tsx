@@ -3,7 +3,7 @@
  * Sidebar navigation with tabs for all admin features
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -30,9 +30,13 @@ import {
   Send,
   ChevronLeft,
   FileText,
+  Paperclip,
+  Download,
+  Image,
+  File,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAdminChat } from "@/context/ChatContext";
+import { useAdminChat, ChatAttachment } from "@/context/ChatContext";
 
 export type AdminTab =
   | "dashboard"
@@ -89,8 +93,10 @@ export function AdminLayout({
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedChatUserId, setSelectedChatUserId] = useState<string | null>(null);
   const [adminMessage, setAdminMessage] = useState("");
+  const [adminAttachments, setAdminAttachments] = useState<ChatAttachment[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<Notification | null>(null);
   const chatMessagesRef = React.useRef<HTMLDivElement>(null);
+  const adminFileInputRef = useRef<HTMLInputElement>(null);
 
   // Use admin chat hook
   const { chats, sendMessage: sendAdminMessage, markAsRead: markChatAsRead, totalUnread: chatTotalUnread } = useAdminChat();
@@ -112,11 +118,60 @@ export function AdminLayout({
     }
   }, [selectedChatUserId, selectedChat, markChatAsRead]);
 
+  // Handle file selection for admin chat
+  const handleAdminFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newAttachments: ChatAttachment[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const reader = new FileReader();
+      const dataUrl = await new Promise<string>((resolve) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+      
+      newAttachments.push({
+        id: `att_${Date.now()}_${i}`,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: dataUrl,
+      });
+    }
+    
+    setAdminAttachments(prev => [...prev, ...newAttachments]);
+    if (adminFileInputRef.current) {
+      adminFileInputRef.current.value = "";
+    }
+  };
+
+  // Remove admin attachment
+  const removeAdminAttachment = (id: string) => {
+    setAdminAttachments(prev => prev.filter(att => att.id !== id));
+  };
+
+  // Format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
+  // Get file icon based on type
+  const getFileIcon = (type: string) => {
+    if (type.startsWith("image/")) return <Image className="w-4 h-4" />;
+    return <File className="w-4 h-4" />;
+  };
+
   // Handle sending admin message
   const handleSendAdminMessage = () => {
-    if (!adminMessage.trim() || !selectedChatUserId) return;
-    sendAdminMessage(selectedChatUserId, adminMessage.trim());
+    if ((!adminMessage.trim() && adminAttachments.length === 0) || !selectedChatUserId) return;
+    sendAdminMessage(selectedChatUserId, adminMessage.trim(), adminAttachments.length > 0 ? adminAttachments : undefined);
     setAdminMessage("");
+    setAdminAttachments([]);
   };
 
   // Seed some initial demo notifications if none exist
@@ -439,7 +494,48 @@ export function AdminLayout({
                                   : "bg-slate-100 text-slate-900 rounded-bl-none"
                               )}
                             >
-                              <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                              {msg.text && <p className="text-sm whitespace-pre-wrap">{msg.text}</p>}
+                              {/* Attachments */}
+                              {msg.attachments && msg.attachments.length > 0 && (
+                                <div className={`${msg.text ? "mt-2" : ""} space-y-2`}>
+                                  {msg.attachments.map((att) => (
+                                    <div key={att.id}>
+                                      {att.type.startsWith("image/") ? (
+                                        <a href={att.url} target="_blank" rel="noopener noreferrer" className="block">
+                                          <img 
+                                            src={att.url} 
+                                            alt={att.name} 
+                                            className="max-w-full rounded-lg max-h-40 object-cover"
+                                          />
+                                        </a>
+                                      ) : (
+                                        <a 
+                                          href={att.url} 
+                                          download={att.name}
+                                          className={cn(
+                                            "flex items-center gap-2 p-2 rounded-lg transition-colors",
+                                            msg.sender === 'admin' 
+                                              ? "bg-white/20 hover:bg-white/30" 
+                                              : "bg-slate-200 hover:bg-slate-300"
+                                          )}
+                                        >
+                                          {getFileIcon(att.type)}
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium truncate">{att.name}</p>
+                                            <p className={cn(
+                                              "text-xs",
+                                              msg.sender === 'admin' ? "opacity-70" : "text-slate-500"
+                                            )}>
+                                              {formatFileSize(att.size)}
+                                            </p>
+                                          </div>
+                                          <Download className="w-4 h-4 flex-shrink-0" />
+                                        </a>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                               <p className={cn(
                                 "text-xs mt-1",
                                 msg.sender === 'admin' ? "text-white/70" : "text-slate-400"
@@ -453,9 +549,47 @@ export function AdminLayout({
                           ))}
                         </div>
                         
+                        {/* Attachment Preview */}
+                        {adminAttachments.length > 0 && (
+                          <div className="px-3 py-2 border-t border-slate-100 bg-slate-50 flex flex-wrap gap-2">
+                            {adminAttachments.map((att) => (
+                              <div key={att.id} className="relative group">
+                                {att.type.startsWith("image/") ? (
+                                  <img src={att.url} alt={att.name} className="w-12 h-12 rounded object-cover" />
+                                ) : (
+                                  <div className="w-12 h-12 rounded bg-slate-200 flex items-center justify-center">
+                                    {getFileIcon(att.type)}
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => removeAdminAttachment(att.id)}
+                                  className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         {/* Input */}
                         <div className="p-3 border-t border-slate-100 bg-slate-50">
                           <div className="flex gap-2">
+                            <input
+                              type="file"
+                              ref={adminFileInputRef}
+                              onChange={handleAdminFileSelect}
+                              multiple
+                              className="hidden"
+                              accept="*/*"
+                            />
+                            <button
+                              onClick={() => adminFileInputRef.current?.click()}
+                              className="p-2 text-slate-500 hover:text-primary hover:bg-slate-200 rounded-lg transition-colors"
+                              title={language === 'ar' ? 'إرفاق ملف' : 'Attach file'}
+                            >
+                              <Paperclip className="w-5 h-5" />
+                            </button>
                             <input
                               type="text"
                               value={adminMessage}
@@ -466,7 +600,7 @@ export function AdminLayout({
                             />
                             <button
                               onClick={handleSendAdminMessage}
-                              disabled={!adminMessage.trim()}
+                              disabled={!adminMessage.trim() && adminAttachments.length === 0}
                               className="p-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Send className="w-5 h-5" />

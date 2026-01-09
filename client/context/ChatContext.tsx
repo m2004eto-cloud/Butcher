@@ -5,12 +5,21 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
+export interface ChatAttachment {
+  id: string;
+  name: string;
+  type: string; // MIME type
+  size: number;
+  url: string; // Base64 data URL or blob URL
+}
+
 export interface ChatMessage {
   id: string;
   text: string;
   sender: "user" | "admin";
   timestamp: string;
   read: boolean;
+  attachments?: ChatAttachment[];
 }
 
 export interface UserChat {
@@ -25,13 +34,13 @@ export interface UserChat {
 interface ChatContextType {
   // For users
   userMessages: ChatMessage[];
-  sendUserMessage: (userId: string, userName: string, userEmail: string, text: string) => void;
+  sendUserMessage: (userId: string, userName: string, userEmail: string, text: string, attachments?: ChatAttachment[]) => void;
   markUserMessagesAsRead: (userId: string) => void;
   userUnreadCount: number;
   
   // For admin
   allChats: UserChat[];
-  sendAdminMessage: (userId: string, text: string) => void;
+  sendAdminMessage: (userId: string, text: string, attachments?: ChatAttachment[]) => void;
   markAdminMessagesAsRead: (userId: string) => void;
   totalUnreadForAdmin: number;
   getUnreadCountForUser: (userId: string) => number;
@@ -75,13 +84,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [allChats]);
 
   // Send message from user to admin
-  const sendUserMessage = useCallback((userId: string, userName: string, userEmail: string, text: string) => {
+  const sendUserMessage = useCallback((userId: string, userName: string, userEmail: string, text: string, attachments?: ChatAttachment[]) => {
     const newMessage: ChatMessage = {
       id: generateId(),
       text,
       sender: "user",
       timestamp: new Date().toISOString(),
       read: false, // Admin hasn't read it yet
+      attachments,
     };
 
     setAllChats(prev => {
@@ -112,13 +122,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Send message from admin to user
-  const sendAdminMessage = useCallback((userId: string, text: string) => {
+  const sendAdminMessage = useCallback((userId: string, text: string, attachments?: ChatAttachment[]) => {
     const newMessage: ChatMessage = {
       id: generateId(),
       text,
       sender: "admin",
       timestamp: new Date().toISOString(),
       read: false, // User hasn't read it yet
+      attachments,
     };
 
     setAllChats(prev => {
@@ -230,9 +241,9 @@ export const useUserChat = (userId: string | undefined) => {
   const messages = chat?.messages || [];
   const unreadCount = userId ? getUnreadCountForUser(userId) : 0;
 
-  const sendMessage = useCallback((userName: string, userEmail: string, text: string) => {
+  const sendMessage = useCallback((userName: string, userEmail: string, text: string, attachments?: ChatAttachment[]) => {
     if (userId) {
-      sendUserMessage(userId, userName, userEmail, text);
+      sendUserMessage(userId, userName, userEmail, text, attachments);
     }
   }, [userId, sendUserMessage]);
 
