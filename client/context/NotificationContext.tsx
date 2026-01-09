@@ -16,6 +16,7 @@ export interface Notification {
   messageAr: string;
   link?: string; // Optional link to navigate to
   linkTab?: string; // Optional admin tab to navigate to
+  linkId?: string; // Optional ID (e.g., orderId, productId) to navigate to
   unread: boolean;
   createdAt: string;
 }
@@ -156,7 +157,7 @@ export const useNotifications = () => {
 // NOTIFICATION HELPERS - Use these to create notifications
 // =====================================================
 
-export const createOrderNotification = (orderNumber: string, action: "new" | "confirmed" | "delivered" | "cancelled") => {
+export const createOrderNotification = (orderNumber: string, action: "new" | "confirmed" | "delivered" | "cancelled", orderId?: string) => {
   const notifications: Record<string, { title: string; titleAr: string; message: string; messageAr: string }> = {
     new: {
       title: "New Order",
@@ -188,6 +189,7 @@ export const createOrderNotification = (orderNumber: string, action: "new" | "co
     type: "order" as NotificationType,
     ...notifications[action],
     linkTab: "orders",
+    linkId: orderId,
   };
 };
 

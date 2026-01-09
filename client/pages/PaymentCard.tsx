@@ -203,17 +203,16 @@ export default function PaymentCardPage() {
       const response = await ordersApi.create({
         userId: user?.id || "",
         items: items.map((item) => {
-          // Extract original product ID: if productId exists use it, otherwise
-          // remove the timestamp suffix we added (last underscore segment if it's a number)
+          // Extract original product ID
+          // Priority: 1) use productId if set, 2) extract from id by removing timestamp suffix
           let productId = item.productId;
           if (!productId) {
-            const parts = item.id.split('_');
-            const lastPart = parts[parts.length - 1];
-            // If last part is a timestamp (all digits), remove it
-            if (/^\d+$/.test(lastPart) && parts.length > 2) {
-              productId = parts.slice(0, -1).join('_');
+            // Check if ID ends with a timestamp (13+ digit number after last underscore)
+            const timestampMatch = item.id.match(/^(.+)_(\d{13,})$/);
+            if (timestampMatch) {
+              productId = timestampMatch[1]; // Everything before the timestamp
             } else {
-              productId = item.id;
+              productId = item.id; // Use as-is
             }
           }
           return {
@@ -228,8 +227,8 @@ export default function PaymentCardPage() {
       });
 
       if (response.success && response.data) {
-        // Add notification for the admin
-        addNotification(createOrderNotification(response.data.orderNumber, "new"));
+        // Add notification for the admin (include order ID for navigation)
+        addNotification(createOrderNotification(response.data.orderNumber, "new", response.data.id));
         
         // Add notification for the user
         addNotification(createUserOrderNotification(response.data.orderNumber, "placed"));

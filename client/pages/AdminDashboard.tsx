@@ -18,6 +18,7 @@ export default function AdminDashboardPage() {
   const { isAdmin } = useAuth();
 
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
 
   // Redirect if not admin
   React.useEffect(() => {
@@ -30,8 +31,18 @@ export default function AdminDashboardPage() {
     return null;
   }
 
-  const handleTabNavigate = (tab: string) => {
+  const handleTabNavigate = (tab: string, id?: string) => {
     setActiveTab(tab as AdminTab);
+    if (tab === "orders" && id) {
+      setSelectedOrderId(id);
+    } else {
+      setSelectedOrderId(null);
+    }
+  };
+
+  const handleTabChange = (tab: AdminTab) => {
+    setActiveTab(tab);
+    setSelectedOrderId(null); // Clear selection when manually changing tabs
   };
 
   const renderTabContent = () => {
@@ -39,7 +50,7 @@ export default function AdminDashboardPage() {
       case "dashboard":
         return <DashboardTab onNavigate={handleTabNavigate} />;
       case "orders":
-        return <OrdersTab onNavigate={handleTabNavigate} />;
+        return <OrdersTab onNavigate={handleTabNavigate} selectedOrderId={selectedOrderId} onClearSelection={() => setSelectedOrderId(null)} />;
       case "stock":
         return <StockTab onNavigate={handleTabNavigate} />;
       case "suppliers":
@@ -62,7 +73,8 @@ export default function AdminDashboardPage() {
   return (
     <AdminLayout 
       activeTab={activeTab} 
-      onTabChange={setActiveTab}
+      onTabChange={handleTabChange}
+      onNavigateWithId={handleTabNavigate}
     >
       {renderTabContent()}
     </AdminLayout>

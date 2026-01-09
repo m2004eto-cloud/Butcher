@@ -50,7 +50,21 @@ export const BasketProvider: React.FC<{ children: React.ReactNode }> = ({
     const savedBasket = localStorage.getItem("basket");
     if (savedBasket) {
       try {
-        setItems(JSON.parse(savedBasket));
+        const parsedItems: BasketItem[] = JSON.parse(savedBasket);
+        // Migrate old items that don't have productId set
+        const migratedItems = parsedItems.map((item) => {
+          if (!item.productId) {
+            // Extract original product ID from modified ID (e.g., "prod_2_1736438400000" -> "prod_2")
+            const timestampMatch = item.id.match(/^(.+)_(\d{13,})$/);
+            if (timestampMatch) {
+              item.productId = timestampMatch[1];
+            } else {
+              item.productId = item.id;
+            }
+          }
+          return item;
+        });
+        setItems(migratedItems);
       } catch (error) {
         console.error("Failed to parse basket from localStorage:", error);
       }

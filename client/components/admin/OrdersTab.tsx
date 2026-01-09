@@ -22,6 +22,8 @@ import { CurrencySymbol } from "@/components/CurrencySymbol";
 
 interface AdminTabProps {
   onNavigate?: (tab: string, id?: string) => void;
+  selectedOrderId?: string | null;
+  onClearSelection?: () => void;
 }
 
 const ORDER_STATUSES: { value: OrderStatus | "all"; label: string }[] = [
@@ -45,7 +47,7 @@ const STATUS_ACTIONS: Record<OrderStatus, OrderStatus[]> = {
   refunded: [],
 };
 
-export function OrdersTab({ onNavigate }: AdminTabProps) {
+export function OrdersTab({ onNavigate, selectedOrderId, onClearSelection }: AdminTabProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
@@ -68,6 +70,19 @@ export function OrdersTab({ onNavigate }: AdminTabProps) {
   useEffect(() => {
     fetchOrders();
   }, [statusFilter]);
+
+  // Auto-select order when selectedOrderId is provided (e.g., from notification click)
+  useEffect(() => {
+    if (selectedOrderId && orders.length > 0) {
+      const order = orders.find((o) => o.id === selectedOrderId);
+      if (order) {
+        setSelectedOrder(order);
+        if (onClearSelection) {
+          onClearSelection(); // Clear the selection after opening
+        }
+      }
+    }
+  }, [selectedOrderId, orders, onClearSelection]);
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
     setUpdating(orderId);

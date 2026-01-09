@@ -47,6 +47,7 @@ export type AdminTab =
 interface AdminLayoutProps {
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
+  onNavigateWithId?: (tab: string, id?: string) => void;
   children: React.ReactNode;
   notifications?: number;
 }
@@ -66,6 +67,7 @@ const tabConfig: { id: AdminTab; labelKey: string; icon: React.ElementType }[] =
 export function AdminLayout({
   activeTab,
   onTabChange,
+  onNavigateWithId,
   children,
   notifications: orderNotifications = 0,
 }: AdminLayoutProps) {
@@ -137,7 +139,12 @@ export function AdminLayout({
   const handleNotificationClick = (notif: typeof notifications[0]) => {
     markAsRead(notif.id);
     if (notif.linkTab) {
-      onTabChange(notif.linkTab as AdminTab);
+      // Use onNavigateWithId if available and there's a linkId, otherwise use onTabChange
+      if (onNavigateWithId && notif.linkId) {
+        onNavigateWithId(notif.linkTab, notif.linkId);
+      } else {
+        onTabChange(notif.linkTab as AdminTab);
+      }
     }
     setNotificationOpen(false);
   };
