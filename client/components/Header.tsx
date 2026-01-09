@@ -121,14 +121,14 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           {/* Left: Language Switcher */}
-          <div className="flex-1">
+          <div className="flex-1 flex items-center">
             <LanguageSwitcher variant="compact" />
           </div>
 
           {/* Center: Logo */}
           <Link
             to="/"
-            className="flex-1 text-center"
+            className="flex-shrink-0 text-center"
           >
             <div className="inline-block">
               <h1 className="text-2xl font-bold text-primary">
