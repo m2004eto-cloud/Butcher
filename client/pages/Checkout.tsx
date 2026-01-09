@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useBasket } from "@/context/BasketContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
-import { useNotifications, createOrderNotification, createUserOrderNotification, createUserPaymentNotification } from "@/context/NotificationContext";
+import { useNotifications, createOrderNotification, createUserOrderNotification, createUserPaymentNotification, createDetailedInvoiceNotification, generateInvoiceNumber, type InvoiceData } from "@/context/NotificationContext";
 import { PriceDisplay } from "@/components/CurrencySymbol";
 import { ordersApi, deliveryApi } from "@/lib/api";
 import type { Address } from "@shared/api";
@@ -721,10 +721,44 @@ export default function CheckoutPage() {
         // Add notification for the user
         addNotification(createUserOrderNotification(response.data.orderNumber, "placed"));
         
+        // Generate TAX invoice
+        const invoiceNumber = generateInvoiceNumber(response.data.orderNumber);
+        const invoiceData: InvoiceData = {
+          invoiceNumber,
+          orderNumber: response.data.orderNumber,
+          date: new Date().toLocaleDateString("en-AE", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          customerName: selectedAddress?.fullName || user?.firstName + " " + user?.familyName || "Customer",
+          customerMobile: selectedAddress?.mobile || user?.mobile || "",
+          customerAddress: selectedAddress 
+            ? `${selectedAddress.building}, ${selectedAddress.street}, ${selectedAddress.area}, ${selectedAddress.emirate}`
+            : "",
+          items: items.map((item) => ({
+            name: item.name,
+            nameAr: item.nameAr,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.price * item.quantity,
+          })),
+          subtotal,
+          vatRate: 5,
+          vatAmount: vat,
+          total,
+          paymentMethod: "cod",
+        };
+
+        // Send TAX invoice notification to the user
+        addNotification(createDetailedInvoiceNotification(invoiceData));
+        
         // Clear basket after successful order
         clearBasket();
         alert(
-          `Order ${response.data.orderNumber} placed successfully! Our team will contact you within 2 hours to confirm delivery.`
+          `Order ${response.data.orderNumber} placed successfully! Our team will contact you within 2 hours to confirm delivery.\n\nYour TAX invoice (${invoiceNumber}) has been sent to your notifications.`
         );
         navigate("/products");
       } else {

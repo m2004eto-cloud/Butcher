@@ -379,3 +379,133 @@ export const createPromoNotification = (title: string, titleAr: string, message:
   messageAr,
   link,
 });
+
+// =====================================================
+// TAX INVOICE NOTIFICATION HELPERS
+// =====================================================
+
+export interface InvoiceItem {
+  name: string;
+  nameAr?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface InvoiceData {
+  invoiceNumber: string;
+  orderNumber: string;
+  date: string;
+  customerName: string;
+  customerMobile: string;
+  customerAddress: string;
+  items: InvoiceItem[];
+  subtotal: number;
+  vatRate: number;
+  vatAmount: number;
+  total: number;
+  paymentMethod: "card" | "cod";
+  vatReference?: string;
+}
+
+/**
+ * Generate a unique invoice number based on order number and timestamp
+ */
+export const generateInvoiceNumber = (orderNumber: string): string => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `INV-${year}${month}-${orderNumber.replace('ORD-', '')}`;
+};
+
+/**
+ * Format invoice for display in notification
+ */
+export const formatInvoiceForNotification = (invoice: InvoiceData, language: "en" | "ar" = "en"): string => {
+  const separator = "─".repeat(30);
+  const doubleSeparator = "═".repeat(30);
+  
+  if (language === "ar") {
+    const itemsList = invoice.items.map(item => 
+      `• ${item.nameAr || item.name} × ${item.quantity.toFixed(3)} جم\n  ${item.totalPrice.toFixed(2)} د.إ`
+    ).join('\n');
+
+    return `
+${doubleSeparator}
+      فاتورة ضريبية
+${doubleSeparator}
+رقم الفاتورة: ${invoice.invoiceNumber}
+رقم الطلب: ${invoice.orderNumber}
+التاريخ: ${invoice.date}
+${separator}
+العميل: ${invoice.customerName}
+الهاتف: ${invoice.customerMobile}
+العنوان: ${invoice.customerAddress}
+${separator}
+المنتجات:
+${itemsList}
+${separator}
+المجموع الفرعي: ${invoice.subtotal.toFixed(2)} د.إ
+ضريبة القيمة المضافة (${invoice.vatRate}%): ${invoice.vatAmount.toFixed(2)} د.إ
+${doubleSeparator}
+الإجمالي: ${invoice.total.toFixed(2)} د.إ
+${doubleSeparator}
+طريقة الدفع: ${invoice.paymentMethod === 'card' ? 'بطاقة ائتمان' : 'الدفع عند الاستلام'}
+${invoice.vatReference ? `رقم التسجيل الضريبي: ${invoice.vatReference}` : ''}
+
+شكراً لتسوقكم معنا!
+    `.trim();
+  }
+
+  const itemsList = invoice.items.map(item => 
+    `• ${item.name} × ${item.quantity.toFixed(3)} gr\n  AED ${item.totalPrice.toFixed(2)}`
+  ).join('\n');
+
+  return `
+${doubleSeparator}
+      TAX INVOICE
+${doubleSeparator}
+Invoice No: ${invoice.invoiceNumber}
+Order No: ${invoice.orderNumber}
+Date: ${invoice.date}
+${separator}
+Customer: ${invoice.customerName}
+Mobile: ${invoice.customerMobile}
+Address: ${invoice.customerAddress}
+${separator}
+Items:
+${itemsList}
+${separator}
+Subtotal: AED ${invoice.subtotal.toFixed(2)}
+VAT (${invoice.vatRate}%): AED ${invoice.vatAmount.toFixed(2)}
+${doubleSeparator}
+TOTAL: AED ${invoice.total.toFixed(2)}
+${doubleSeparator}
+Payment Method: ${invoice.paymentMethod === 'card' ? 'Credit Card' : 'Cash on Delivery'}
+${invoice.vatReference ? `VAT Reference: ${invoice.vatReference}` : ''}
+
+Thank you for shopping with us!
+  `.trim();
+};
+
+/**
+ * Create a TAX invoice notification for the user
+ */
+export const createInvoiceNotification = (invoice: InvoiceData) => ({
+  type: "payment" as NotificationType,
+  title: "TAX Invoice Ready",
+  titleAr: "الفاتورة الضريبية جاهزة",
+  message: `Your TAX invoice ${invoice.invoiceNumber} for order ${invoice.orderNumber} is ready. Total: AED ${invoice.total.toFixed(2)}`,
+  messageAr: `فاتورتك الضريبية ${invoice.invoiceNumber} للطلب ${invoice.orderNumber} جاهزة. الإجمالي: ${invoice.total.toFixed(2)} د.إ`,
+});
+
+/**
+ * Create a detailed TAX invoice notification with full invoice text
+ */
+export const createDetailedInvoiceNotification = (invoice: InvoiceData) => ({
+  type: "payment" as NotificationType,
+  title: `📄 TAX Invoice #${invoice.invoiceNumber}`,
+  titleAr: `📄 فاتورة ضريبية #${invoice.invoiceNumber}`,
+  message: formatInvoiceForNotification(invoice, "en"),
+  messageAr: formatInvoiceForNotification(invoice, "ar"),
+});

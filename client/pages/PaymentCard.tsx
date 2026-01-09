@@ -4,22 +4,28 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useBasket } from "@/context/BasketContext";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications, createOrderNotification, createUserOrderNotification, createDetailedInvoiceNotification, generateInvoiceNumber, type InvoiceData } from "@/context/NotificationContext";
 import { formatPrice } from "@/utils/vat";
 import {
   isValidCardNumber,
   isValidCVV,
   isValidExpiryDate,
 } from "@/utils/validators";
-import { ordersApi } from "@/lib/api";
+import { ordersApi, deliveryApi } from "@/lib/api";
+import type { Address } from "@shared/api";
 
 export default function PaymentCardPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { items, subtotal, vat, total, clearBasket } = useBasket();
   const { user } = useAuth();
+  const { addNotification } = useNotifications();
   
   // Get addressId from navigation state (passed from Checkout)
   const addressId = (location.state as { addressId?: string })?.addressId || "";
+  
+  // State for delivery address
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
 
   const [formData, setFormData] = useState({
     cardholderName: user?.firstName || "",
@@ -34,6 +40,27 @@ export default function PaymentCardPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCVV, setShowCVV] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Fetch delivery address on mount
+  React.useEffect(() => {
+    const fetchAddress = async () => {
+      if (!addressId || !user?.id) return;
+      
+      try {
+        const response = await deliveryApi.getAddresses(user.id);
+        if (response.success && response.data) {
+          const address = response.data.find(a => a.id === addressId);
+          if (address) {
+            setSelectedAddress(address);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch address:", err);
+      }
+    };
+    
+    fetchAddress();
+  }, [addressId, user?.id]);
 
   if (items.length === 0) {
     return (
@@ -176,9 +203,50 @@ export default function PaymentCardPage() {
       });
 
       if (response.success && response.data) {
+        // Add notification for the admin
+        addNotification(createOrderNotification(response.data.orderNumber, "new"));
+        
+        // Add notification for the user
+        addNotification(createUserOrderNotification(response.data.orderNumber, "placed"));
+        
+        // Generate TAX invoice
+        const invoiceNumber = generateInvoiceNumber(response.data.orderNumber);
+        const invoiceData: InvoiceData = {
+          invoiceNumber,
+          orderNumber: response.data.orderNumber,
+          date: new Date().toLocaleDateString("en-AE", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          customerName: selectedAddress?.fullName || formData.cardholderName || user?.firstName + " " + user?.familyName || "Customer",
+          customerMobile: selectedAddress?.mobile || user?.mobile || "",
+          customerAddress: selectedAddress 
+            ? `${selectedAddress.building}, ${selectedAddress.street}, ${selectedAddress.area}, ${selectedAddress.emirate}`
+            : formData.billingAddress,
+          items: items.map((item) => ({
+            name: item.name,
+            nameAr: item.nameAr,
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.price * item.quantity,
+          })),
+          subtotal,
+          vatRate: 5,
+          vatAmount: vat,
+          total,
+          paymentMethod: "card",
+          vatReference: formData.vat_reference || undefined,
+        };
+
+        // Send TAX invoice notification to the user
+        addNotification(createDetailedInvoiceNotification(invoiceData));
+        
         clearBasket();
         alert(
-          `Payment successful! Your order has been placed.\n\nOrder ID: ${response.data.orderNumber}\n\nThank you for your order!`
+          `Payment successful! Your order has been placed.\n\nOrder ID: ${response.data.orderNumber}\nInvoice: ${invoiceNumber}\n\nYour TAX invoice has been sent to your notifications.\n\nThank you for your order!`
         );
         navigate("/products");
       } else {
