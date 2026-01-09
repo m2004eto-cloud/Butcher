@@ -328,53 +328,53 @@ export default function PaymentCardPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="flex-1 py-12 px-4">
+      <main className="flex-1 py-6 sm:py-12 px-3 sm:px-4">
         <div className="max-w-7xl mx-auto">
           {/* Progress Indicator */}
-          <div className="mb-8 flex justify-center">
-            <div className="flex items-center gap-8">
+          <div className="mb-6 sm:mb-8 flex justify-center">
+            <div className="flex items-center gap-3 sm:gap-8">
               <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-muted text-foreground font-bold flex items-center justify-center mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted text-foreground font-bold text-sm sm:text-base flex items-center justify-center mb-1 sm:mb-2">
                   ✓
                 </div>
-                <p className="text-xs text-muted-foreground">Basket</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Basket</p>
               </div>
-              <div className="w-12 h-1 bg-muted" />
+              <div className="w-6 sm:w-12 h-1 bg-muted" />
               <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-muted text-foreground font-bold flex items-center justify-center mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted text-foreground font-bold text-sm sm:text-base flex items-center justify-center mb-1 sm:mb-2">
                   ✓
                 </div>
-                <p className="text-xs text-muted-foreground">Checkout</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Checkout</p>
               </div>
-              <div className="w-12 h-1 bg-muted" />
+              <div className="w-6 sm:w-12 h-1 bg-muted" />
               <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary text-primary-foreground font-bold text-sm sm:text-base flex items-center justify-center mb-1 sm:mb-2">
                   3
                 </div>
-                <p className="text-xs text-foreground font-semibold">Payment</p>
+                <p className="text-[10px] sm:text-xs text-foreground font-semibold">Payment</p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
             {/* Payment Form */}
             <div className="lg:col-span-2">
-              <div className="card-premium p-8 space-y-6">
-                <h1 className="text-3xl font-bold text-foreground">
+              <div className="card-premium p-4 sm:p-8 space-y-4 sm:space-y-6">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
                   Complete Payment
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-sm sm:text-base text-muted-foreground">
                   All transactions are secure and encrypted
                 </p>
 
                 {/* API Error Display */}
                 {apiError && (
-                  <div className="bg-destructive/10 border border-destructive text-destructive p-4 rounded-lg">
+                  <div className="bg-destructive/10 border border-destructive text-destructive p-3 sm:p-4 rounded-lg text-sm">
                     {apiError}
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                   {/* Cardholder Name */}
                   <FormField
                     label="Cardholder Name"
@@ -486,18 +486,18 @@ export default function PaymentCardPage() {
                   />
 
                   {/* Security Notice */}
-                  <div className="bg-secondary/10 border border-secondary rounded-lg p-4 space-y-2">
+                  <div className="bg-secondary/10 border border-secondary rounded-lg p-3 sm:p-4 space-y-2">
                     <div className="flex gap-2">
                       <svg
-                        className="w-5 h-5 text-secondary flex-shrink-0"
+                        className="w-4 h-4 sm:w-5 sm:h-5 text-secondary flex-shrink-0"
                         fill="currentColor"
                         viewBox="0 0 24 24"
                       >
                         <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
                       </svg>
-                      <div className="text-sm text-secondary">
+                      <div className="text-xs sm:text-sm text-secondary">
                         <p className="font-semibold">Secure Payment</p>
-                        <p className="text-xs mt-1">
+                        <p className="text-[10px] sm:text-xs mt-1">
                           Your card details are encrypted and never stored on our servers
                         </p>
                       </div>
@@ -508,7 +508,7 @@ export default function PaymentCardPage() {
                   <button
                     type="submit"
                     disabled={isProcessing}
-                    className="w-full btn-primary py-3 rounded-lg font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    className="w-full btn-primary py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     {isProcessing
                       ? "Processing Payment..."
@@ -519,7 +519,7 @@ export default function PaymentCardPage() {
                   <button
                     type="button"
                     onClick={() => navigate("/checkout")}
-                    className="w-full btn-outline py-2 rounded-lg text-sm font-semibold"
+                    className="w-full btn-outline py-2 rounded-lg text-xs sm:text-sm font-semibold"
                   >
                     Back to Checkout
                   </button>
@@ -529,22 +529,22 @@ export default function PaymentCardPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="card-premium p-6 sticky top-24 space-y-4">
-                <h2 className="text-xl font-bold text-foreground">
+              <div className="card-premium p-4 sm:p-6 sticky top-24 space-y-3 sm:space-y-4">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">
                   Order Summary
                 </h2>
 
                 {/* Items */}
-                <div className="space-y-2 max-h-64 overflow-y-auto border-b border-border pb-4">
+                <div className="space-y-2 max-h-48 sm:max-h-64 overflow-y-auto border-b border-border pb-3 sm:pb-4">
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex justify-between items-center text-sm"
+                      className="flex justify-between items-center text-xs sm:text-sm"
                     >
-                      <span className="text-muted-foreground">
+                      <span className="text-muted-foreground line-clamp-1 flex-1 mr-2">
                         {item.name} x {item.quantity}
                       </span>
-                      <span className="font-semibold">
+                      <span className="font-semibold whitespace-nowrap">
                         {formatPrice(item.price * item.quantity)}
                       </span>
                     </div>
@@ -552,22 +552,22 @@ export default function PaymentCardPage() {
                 </div>
 
                 {/* Totals */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-semibold">{formatPrice(subtotal)}</span>
                   </div>
-                  <div className="flex justify-between items-center bg-secondary/10 -mx-6 px-6 py-2">
+                  <div className="flex justify-between items-center bg-secondary/10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 text-sm">
                     <span className="text-muted-foreground">VAT (5%)</span>
                     <span className="font-semibold text-secondary">
                       {formatPrice(vat)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-border">
-                    <span className="text-lg font-bold text-foreground">
+                    <span className="text-base sm:text-lg font-bold text-foreground">
                       Total
                     </span>
-                    <span className="text-2xl font-bold text-primary">
+                    <span className="text-xl sm:text-2xl font-bold text-primary">
                       {formatPrice(total)}
                     </span>
                   </div>

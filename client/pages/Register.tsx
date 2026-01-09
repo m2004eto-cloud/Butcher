@@ -359,18 +359,18 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header showBasketIcon={false} />
 
-      <main className="flex-1 py-12 px-4">
+      <main className="flex-1 py-6 sm:py-12 px-3 sm:px-4">
         <div className="max-w-2xl mx-auto">
           {/* Page Title */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-foreground">Create Account</h1>
-            <p className="text-muted-foreground mt-2">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground">Create Account</h1>
+            <p className="text-muted-foreground mt-2 text-sm sm:text-base">
               Join us and start shopping for premium quality meats
             </p>
           </div>
 
           {/* Register Form */}
-          <form onSubmit={handleRegister} className="card-premium p-8 space-y-6">
+          <form onSubmit={handleRegister} className="card-premium p-4 sm:p-8 space-y-4 sm:space-y-6">
             {/* API Error Display */}
             {apiError && (
               <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg text-sm">

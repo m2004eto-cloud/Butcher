@@ -43,14 +43,14 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="py-12 px-4">
+    <div className="py-6 sm:py-12 px-3 sm:px-4">
       <div className="max-w-7xl mx-auto">
         {/* Page Header */}
-        <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">
+        <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2">
               {t("products.title")}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm sm:text-base">
               {isLoggedIn
                 ? t("products.welcome", { name: user?.firstName || "" })
                 : isVisitor
@@ -60,13 +60,13 @@ export default function ProductsPage() {
           </div>
 
           {/* Category Filter */}
-          <div className="mb-8">
-            <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="mb-6 sm:mb-8">
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
               {categories.map((category) => (
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-full font-semibold whitespace-nowrap transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold whitespace-nowrap transition-all text-sm sm:text-base ${
                     selectedCategory === category
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-foreground hover:bg-muted/80"
@@ -79,7 +79,7 @@ export default function ProductsPage() {
           </div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}

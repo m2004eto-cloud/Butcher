@@ -35,18 +35,18 @@ export default function BasketPage() {
 
   if (items.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-8 sm:py-12">
         <div className="max-w-md w-full text-center">
-          <div className="text-6xl mb-4">🛒</div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">
+          <div className="text-5xl sm:text-6xl mb-4">🛒</div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
             {t("basket.empty")}
           </h1>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-sm sm:text-base text-muted-foreground mb-6">
             {t("basket.emptyDesc")}
           </p>
           <button
             onClick={() => navigate("/products")}
-            className="btn-primary inline-block"
+            className="btn-primary inline-block text-sm sm:text-base"
           >
             {t("basket.continueShopping")}
           </button>
@@ -56,100 +56,106 @@ export default function BasketPage() {
   }
 
   return (
-    <div className="py-12 px-4">
+    <div className="py-6 sm:py-12 px-3 sm:px-4">
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground">{t("basket.title")}</h1>
-            <p className="text-muted-foreground">
+          <div className="mb-4 sm:mb-8">
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground">{t("basket.title")}</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               {t("basket.subtitle")}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
             {/* Basket Items */}
             <div className="lg:col-span-2">
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {items.map((item) => (
-                  <div key={item.id} className="card-premium p-4 flex gap-4">
-                    {/* Product Image */}
-                    <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
-                      {item.image ? (
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                      ) : (
-                        <span className="text-3xl">🥩</span>
-                      )}
-                    </div>
+                  <div key={item.id} className="card-premium p-3 sm:p-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
+                    {/* Top Row: Image + Details */}
+                    <div className="flex gap-3 sm:gap-4">
+                      {/* Product Image */}
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                        {item.image ? (
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <span className="text-2xl sm:text-3xl">🥩</span>
+                        )}
+                      </div>
 
-                    {/* Product Details */}
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground">
-                        {getItemName(item)}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {getItemCategory(item)}
-                      </p>
-                      {item.notes && (
-                        <p className="text-xs text-primary mt-1 flex items-center gap-1">
-                          <span>🔪</span>
-                          {item.notes}
+                      {/* Product Details */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground text-sm sm:text-base line-clamp-1">
+                          {getItemName(item)}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          {getItemCategory(item)}
                         </p>
-                      )}
-                      <p className="font-semibold text-primary mt-2">
-                        <PriceDisplay price={item.price} size="md" />
-                      </p>
+                        {item.notes && (
+                          <p className="text-xs text-primary mt-1 flex items-center gap-1 line-clamp-1">
+                            <span>🔪</span>
+                            {item.notes}
+                          </p>
+                        )}
+                        <p className="font-semibold text-primary mt-1 sm:mt-2 text-sm sm:text-base">
+                          <PriceDisplay price={item.price} size="md" />
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Quantity Controls */}
-                    <div className="flex items-center gap-2 border border-border rounded-md p-1">
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, Math.max(0.250, parseFloat((item.quantity - 0.250).toFixed(3))))
-                        }
-                        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
+                    {/* Bottom Row: Quantity + Total - stacks on mobile */}
+                    <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-4 mt-2 sm:mt-0">
+                      {/* Quantity Controls */}
+                      <div className="flex items-center gap-1 sm:gap-2 border border-border rounded-md p-1">
+                        <button
+                          onClick={() =>
+                            updateQuantity(item.id, Math.max(0.250, parseFloat((item.quantity - 0.250).toFixed(3))))
+                          }
+                          className="p-1 text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <path d="M19 13H5v-2h14v2z" />
-                        </svg>
-                      </button>
-                      <span className="w-20 text-center font-semibold">
-                        {item.quantity.toFixed(3)} {language === "ar" ? "جرام" : "gr"}
-                      </span>
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, parseFloat((item.quantity + 0.250).toFixed(3)))
-                        }
-                        className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 24 24"
+                          <svg
+                            className="w-3 h-3 sm:w-4 sm:h-4"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M19 13H5v-2h14v2z" />
+                          </svg>
+                        </button>
+                        <span className="w-16 sm:w-20 text-center font-semibold text-xs sm:text-sm">
+                          {item.quantity.toFixed(3)} {language === "ar" ? "جرام" : "gr"}
+                        </span>
+                        <button
+                          onClick={() =>
+                            updateQuantity(item.id, parseFloat((item.quantity + 0.250).toFixed(3)))
+                          }
+                          className="p-1 text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                        </svg>
-                      </button>
-                    </div>
+                          <svg
+                            className="w-3 h-3 sm:w-4 sm:h-4"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                          </svg>
+                        </button>
+                      </div>
 
-                    {/* Item Total & Remove */}
-                    <div className="text-right">
-                      <p className="font-bold text-foreground">
-                        <PriceDisplay price={item.price * item.quantity} size="md" />
-                      </p>
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="text-destructive hover:text-destructive/80 text-sm font-semibold mt-2 transition-colors"
-                      >
-                        {t("basket.remove")}
-                      </button>
+                      {/* Item Total & Remove */}
+                      <div className="text-right">
+                        <p className="font-bold text-foreground text-sm sm:text-base">
+                          <PriceDisplay price={item.price * item.quantity} size="md" />
+                        </p>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="text-destructive hover:text-destructive/80 text-xs sm:text-sm font-semibold mt-1 sm:mt-2 transition-colors"
+                        >
+                          {t("basket.remove")}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -158,7 +164,7 @@ export default function BasketPage() {
               {/* Continue Shopping */}
               <button
                 onClick={() => navigate("/products")}
-                className="mt-6 btn-outline w-full py-3 rounded-lg font-semibold"
+                className="mt-4 sm:mt-6 btn-outline w-full py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base"
               >
                 {t("basket.continueShopping")}
               </button>
@@ -166,44 +172,44 @@ export default function BasketPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="card-premium p-6 sticky top-24 space-y-4">
-                <h2 className="text-xl font-bold text-foreground">
+              <div className="card-premium p-4 sm:p-6 sticky top-24 space-y-3 sm:space-y-4">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">
                   {t("basket.summary")}
                 </h2>
 
-                <div className="space-y-3 border-b border-border pb-4">
+                <div className="space-y-2 sm:space-y-3 border-b border-border pb-3 sm:pb-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">{t("basket.subtotal")}</span>
-                    <span className="font-semibold"><PriceDisplay price={subtotal} size="md" /></span>
+                    <span className="text-sm sm:text-base text-muted-foreground">{t("basket.subtotal")}</span>
+                    <span className="font-semibold text-sm sm:text-base"><PriceDisplay price={subtotal} size="md" /></span>
                   </div>
-                  <div className="flex justify-between items-center bg-secondary/10 -mx-6 px-6 py-2 rounded-lg">
-                    <span className="text-muted-foreground">VAT (5%)</span>
-                    <span className="font-semibold text-secondary">
+                  <div className="flex justify-between items-center bg-secondary/10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 rounded-lg">
+                    <span className="text-sm sm:text-base text-muted-foreground">VAT (5%)</span>
+                    <span className="font-semibold text-secondary text-sm sm:text-base">
                       <PriceDisplay price={vat} size="md" />
                     </span>
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-4">
-                  <span className="text-lg font-bold text-foreground">{t("basket.total")}</span>
-                  <span className="text-2xl font-bold text-primary">
+                <div className="flex justify-between items-center pt-2 sm:pt-4">
+                  <span className="text-base sm:text-lg font-bold text-foreground">{t("basket.total")}</span>
+                  <span className="text-xl sm:text-2xl font-bold text-primary">
                     <PriceDisplay price={total} size="lg" />
                   </span>
                 </div>
 
                 <button
                   onClick={() => navigate("/checkout")}
-                  className="w-full btn-primary py-3 rounded-lg font-semibold text-base"
+                  className="w-full btn-primary py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base"
                 >
                   {t("basket.checkout")}
                 </button>
 
                 {/* Save Basket */}
-                <div className="pt-4 border-t border-border">
+                <div className="pt-3 sm:pt-4 border-t border-border">
                   {!showSaveDialog ? (
                     <button
                       onClick={() => setShowSaveDialog(true)}
-                      className="w-full btn-outline py-2 rounded-lg text-sm font-semibold"
+                      className="w-full btn-outline py-2 rounded-lg text-xs sm:text-sm font-semibold"
                     >
                       Save for Later
                     </button>
@@ -214,12 +220,12 @@ export default function BasketPage() {
                         value={savedBasketName}
                         onChange={(e) => setSavedBasketName(e.target.value)}
                         placeholder="e.g., Weekend BBQ"
-                        className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:border-primary outline-none"
+                        className="w-full px-3 py-2 border border-input rounded-lg text-xs sm:text-sm focus:border-primary outline-none"
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={handleSaveBasket}
-                          className="flex-1 bg-secondary text-secondary-foreground text-sm font-semibold py-2 rounded-lg hover:bg-secondary/90 transition-colors"
+                          className="flex-1 bg-secondary text-secondary-foreground text-xs sm:text-sm font-semibold py-2 rounded-lg hover:bg-secondary/90 transition-colors"
                         >
                           Save
                         </button>
@@ -228,7 +234,7 @@ export default function BasketPage() {
                             setShowSaveDialog(false);
                             setSavedBasketName("");
                           }}
-                          className="flex-1 bg-muted text-foreground text-sm font-semibold py-2 rounded-lg hover:bg-muted/80 transition-colors"
+                          className="flex-1 bg-muted text-foreground text-xs sm:text-sm font-semibold py-2 rounded-lg hover:bg-muted/80 transition-colors"
                         >
                           Cancel
                         </button>
@@ -244,7 +250,7 @@ export default function BasketPage() {
                       clearBasket();
                     }
                   }}
-                  className="w-full text-destructive text-sm font-semibold py-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                  className="w-full text-destructive text-xs sm:text-sm font-semibold py-2 hover:bg-destructive/10 rounded-lg transition-colors"
                 >
                   Clear Basket
                 </button>

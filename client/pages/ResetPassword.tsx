@@ -84,29 +84,29 @@ export default function ResetPasswordPage() {
   if (isValidToken === false) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex flex-col">
-        <div className="py-6 px-4">
+        <div className="py-4 sm:py-6 px-3 sm:px-4">
           <div className="max-w-md mx-auto flex justify-center">
             <LanguageSwitcher variant="compact" />
           </div>
         </div>
 
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-8 sm:py-12">
           <div className="w-full max-w-md">
-            <div className="card-premium p-8 text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="card-premium p-4 sm:p-8 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
                 {t("reset.invalidTitle")}
               </h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
                 {t("reset.invalidMessage")}
               </p>
               <Link
                 to="/forgot-password"
-                className="btn-primary inline-block px-6 py-3 rounded-lg font-semibold"
+                className="btn-primary inline-block px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base"
               >
                 {t("reset.requestNew")}
               </Link>
@@ -122,8 +122,8 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-muted-foreground">{t("reset.verifying")}</p>
+          <div className="animate-spin w-6 h-6 sm:w-8 sm:h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-3 sm:mb-4"></div>
+          <p className="text-sm sm:text-base text-muted-foreground">{t("reset.verifying")}</p>
         </div>
       </div>
     );
@@ -133,29 +133,29 @@ export default function ResetPasswordPage() {
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex flex-col">
-        <div className="py-6 px-4">
+        <div className="py-4 sm:py-6 px-3 sm:px-4">
           <div className="max-w-md mx-auto flex justify-center">
             <LanguageSwitcher variant="compact" />
           </div>
         </div>
 
-        <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-8 sm:py-12">
           <div className="w-full max-w-md">
-            <div className="card-premium p-8 text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="card-premium p-4 sm:p-8 text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-foreground mb-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
                 {t("reset.successTitle")}
               </h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6">
                 {t("reset.successMessage")}
               </p>
               <Link
                 to="/login"
-                className="btn-primary inline-block px-6 py-3 rounded-lg font-semibold"
+                className="btn-primary inline-block px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold text-sm sm:text-base"
               >
                 {t("reset.loginNow")}
               </Link>
@@ -169,24 +169,24 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex flex-col">
       {/* Header */}
-      <div className="py-6 px-4">
+      <div className="py-4 sm:py-6 px-3 sm:px-4">
         <div className="max-w-md mx-auto flex justify-center">
           <LanguageSwitcher variant="compact" />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      <div className="flex-1 flex items-center justify-center px-3 sm:px-4 py-8 sm:py-12">
         <div className="w-full max-w-md">
           {/* Logo & Title */}
-          <div className="text-center mb-8 animate-fade-in">
-            <h1 className="text-4xl font-bold text-primary mb-2">🔐</h1>
-            <h2 className="text-3xl font-bold text-foreground">{t("reset.title")}</h2>
-            <p className="text-muted-foreground text-sm mt-2">
+          <div className="text-center mb-6 sm:mb-8 animate-fade-in">
+            <h1 className="text-3xl sm:text-4xl font-bold text-primary mb-2">🔐</h1>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">{t("reset.title")}</h2>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-2">
               {t("reset.subtitle")}
             </p>
             {userEmail && (
-              <p className="text-sm text-primary mt-2">
+              <p className="text-xs sm:text-sm text-primary mt-2 break-all">
                 📧 {userEmail}
               </p>
             )}
@@ -195,16 +195,16 @@ export default function ResetPasswordPage() {
           {/* Reset Password Form */}
           <form
             onSubmit={handleSubmit}
-            className="card-premium p-8 space-y-6 animate-slide-up"
+            className="card-premium p-4 sm:p-8 space-y-4 sm:space-y-6 animate-slide-up"
           >
             {serverError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-600 px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm">
                 {serverError}
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label className="block text-xs sm:text-sm font-semibold text-foreground mb-2">
                 {t("reset.newPassword")}
               </label>
               <div className="relative">
@@ -218,7 +218,7 @@ export default function ResetPasswordPage() {
                     }
                   }}
                   placeholder={t("reset.newPasswordPlaceholder")}
-                  className={`w-full px-4 py-3 rounded-lg border-2 transition-colors ${
+                  className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border-2 transition-colors text-sm sm:text-base ${
                     errors.password
                       ? "border-destructive bg-destructive/5"
                       : "border-input bg-white focus:border-primary"
@@ -233,15 +233,15 @@ export default function ResetPasswordPage() {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-destructive text-sm mt-1">{errors.password}</p>
+                <p className="text-destructive text-xs sm:text-sm mt-1">{errors.password}</p>
               )}
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
                 {t("reset.passwordHint")}
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-foreground mb-2">
+              <label className="block text-xs sm:text-sm font-semibold text-foreground mb-2">
                 {t("reset.confirmPassword")}
               </label>
               <input
@@ -254,31 +254,31 @@ export default function ResetPasswordPage() {
                   }
                 }}
                 placeholder={t("reset.confirmPasswordPlaceholder")}
-                className={`w-full px-4 py-3 rounded-lg border-2 transition-colors ${
+                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border-2 transition-colors text-sm sm:text-base ${
                   errors.confirmPassword
                     ? "border-destructive bg-destructive/5"
                     : "border-input bg-white focus:border-primary"
                 } text-foreground placeholder-muted-foreground focus:outline-none`}
               />
               {errors.confirmPassword && (
-                <p className="text-destructive text-sm mt-1">{errors.confirmPassword}</p>
+                <p className="text-destructive text-xs sm:text-sm mt-1">{errors.confirmPassword}</p>
               )}
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full btn-primary py-3 rounded-lg font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="w-full btn-primary py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               {isLoading ? t("reset.resetting") : t("reset.resetButton")}
             </button>
           </form>
 
           {/* Back to Login Link */}
-          <div className="text-center mt-6">
+          <div className="text-center mt-4 sm:mt-6">
             <Link
               to="/login"
-              className="text-primary font-semibold hover:text-primary/80 transition-colors"
+              className="text-primary font-semibold hover:text-primary/80 transition-colors text-sm sm:text-base"
             >
               ← {t("reset.backToLogin")}
             </Link>

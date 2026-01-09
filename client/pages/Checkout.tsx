@@ -897,132 +897,135 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="py-12 px-4">
+    <div className="py-6 sm:py-12 px-3 sm:px-4">
         <div className="max-w-7xl mx-auto">
           {/* Progress Indicator */}
-          <div className="mb-8 flex justify-center">
-            <div className="flex items-center gap-8">
+          <div className="mb-6 sm:mb-8 flex justify-center">
+            <div className="flex items-center gap-3 sm:gap-8">
               <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-muted text-foreground font-bold flex items-center justify-center mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted text-foreground font-bold text-sm sm:text-base flex items-center justify-center mb-1 sm:mb-2">
                   ✓
                 </div>
-                <p className="text-xs text-muted-foreground">Basket</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Basket</p>
               </div>
-              <div className="w-12 h-1 bg-muted" />
+              <div className="w-6 sm:w-12 h-1 bg-muted" />
               <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary text-primary-foreground font-bold text-sm sm:text-base flex items-center justify-center mb-1 sm:mb-2">
                   2
                 </div>
-                <p className="text-xs text-foreground font-semibold">Checkout</p>
+                <p className="text-[10px] sm:text-xs text-foreground font-semibold">Checkout</p>
               </div>
-              <div className="w-12 h-1 bg-muted" />
+              <div className="w-6 sm:w-12 h-1 bg-muted" />
               <div className="text-center">
-                <div className="w-10 h-10 rounded-full bg-muted text-muted-foreground font-bold flex items-center justify-center mb-2">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-muted text-muted-foreground font-bold text-sm sm:text-base flex items-center justify-center mb-1 sm:mb-2">
                   3
                 </div>
-                <p className="text-xs text-muted-foreground">Confirmation</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Confirmation</p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
             {/* Checkout Content */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-8">
               {/* Error Display */}
               {error && (
-                <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg text-sm">
+                <div className="bg-destructive/10 border border-destructive text-destructive px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm">
                   {error}
                 </div>
               )}
 
               {/* Delivery Address Section */}
-              <div className="card-premium p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-bold text-foreground">
+              <div className="card-premium p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h2 className="text-lg sm:text-2xl font-bold text-foreground">
                     Delivery Address
                   </h2>
                   <button
                     onClick={handleOpenAddModal}
-                    className="text-primary hover:text-primary/80 text-sm font-semibold flex items-center gap-1"
+                    className="text-primary hover:text-primary/80 text-xs sm:text-sm font-semibold flex items-center gap-1"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    Add New Address
+                    <span className="hidden xs:inline">Add New</span>
+                    <span className="xs:hidden">Add</span>
                   </button>
                 </div>
 
                 {isLoadingAddresses ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                    <p className="text-muted-foreground mt-2">Loading addresses...</p>
+                  <div className="text-center py-6 sm:py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="text-muted-foreground mt-2 text-sm">Loading addresses...</p>
                   </div>
                 ) : addresses.length === 0 ? (
-                  <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
-                    <div className="text-4xl mb-2">📍</div>
-                    <p className="text-muted-foreground mb-4">No saved addresses</p>
+                  <div className="text-center py-6 sm:py-8 border-2 border-dashed border-border rounded-lg">
+                    <div className="text-3xl sm:text-4xl mb-2">📍</div>
+                    <p className="text-sm sm:text-base text-muted-foreground mb-3 sm:mb-4">No saved addresses</p>
                     <button
                       onClick={handleOpenAddModal}
-                      className="btn-primary px-6 py-2"
+                      className="btn-primary px-4 sm:px-6 py-2 text-sm"
                     >
                       Add Your First Address
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     {addresses.map((address) => (
                       <div
                         key={address.id}
                         onClick={() => setSelectedAddressId(address.id)}
-                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        className={`p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all ${
                           selectedAddressId === address.id
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary/50"
                         }`}
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-2 sm:gap-3">
                           <div
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
+                            className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1 ${
                               selectedAddressId === address.id
                                 ? "border-primary bg-primary"
                                 : "border-border"
                             }`}
                           >
                             {selectedAddressId === address.id && (
-                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="w-2 h-2 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-semibold text-foreground">{address.label}</span>
+                            <div className="flex items-center gap-1 sm:gap-2 mb-1 flex-wrap">
+                              <span className="font-semibold text-foreground text-sm sm:text-base">{address.label}</span>
                               {address.isDefault && (
-                                <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">
+                                <span className="px-1.5 sm:px-2 py-0.5 bg-primary/10 text-primary text-[10px] sm:text-xs rounded-full font-medium">
                                   Default
                                 </span>
                               )}
                               {address.latitude && address.longitude && (
-                                <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs rounded-full font-medium flex items-center gap-1">
-                                  📍 Located
+                                <span className="px-1.5 sm:px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] sm:text-xs rounded-full font-medium flex items-center gap-0.5 sm:gap-1">
+                                  📍 <span className="hidden xs:inline">Located</span>
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-foreground">{address.fullName}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-foreground">{address.fullName}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1 sm:line-clamp-none">
                               {address.building}, {address.street}
                               {address.floor && `, Floor ${address.floor}`}
                               {address.apartment && `, Apt ${address.apartment}`}
                             </p>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               {address.area}, {address.emirate}
                             </p>
-                            <p className="text-sm text-muted-foreground">{address.mobile}</p>
+                            <p className="text-xs sm:text-sm text-muted-foreground">{address.mobile}</p>
                             
-                            {/* Mini Map Preview */}
-                            <AddressMapPreview latitude={address.latitude} longitude={address.longitude} />
+                            {/* Mini Map Preview - hidden on mobile */}
+                            <div className="hidden sm:block">
+                              <AddressMapPreview latitude={address.latitude} longitude={address.longitude} />
+                            </div>
                           </div>
-                          <div className="flex flex-col items-center gap-1">
+                          <div className="flex flex-col items-center gap-0.5 sm:gap-1">
                             {/* View on Map button */}
                             {address.latitude && address.longitude && (
                               <button
@@ -1030,10 +1033,10 @@ export default function CheckoutPage() {
                                   e.stopPropagation();
                                   setViewingAddress(address);
                                 }}
-                                className="p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                className="p-1.5 sm:p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                                 title="View on Map"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                                 </svg>
                               </button>
@@ -1043,10 +1046,10 @@ export default function CheckoutPage() {
                                 e.stopPropagation();
                                 handleOpenEditModal(address);
                               }}
-                              className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                              className="p-1.5 sm:p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                               title="Edit"
                             >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
                             </button>
@@ -1056,10 +1059,10 @@ export default function CheckoutPage() {
                                   e.stopPropagation();
                                   handleDeleteAddress(address.id);
                                 }}
-                                className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                                className="p-1.5 sm:p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                                 title="Delete"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                               </button>
@@ -1073,22 +1076,22 @@ export default function CheckoutPage() {
               </div>
 
               {/* Preferred Delivery Time Slot Section */}
-              <div className="card-premium p-6">
-                <h2 className="text-2xl font-bold text-foreground mb-2">
+              <div className="card-premium p-4 sm:p-6">
+                <h2 className="text-lg sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">
                   {language === "ar" ? "وقت التوصيل المفضل" : "Preferred Delivery Time"}
                 </h2>
-                <p className="text-sm text-muted-foreground mb-6">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">
                   {language === "ar" 
                     ? "اختر اليوم والوقت الأنسب لاستلام طلبك" 
                     : "Choose your preferred date and time for delivery"}
                 </p>
 
                 {/* Date Selection */}
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold text-foreground mb-3">
+                <div className="mb-4 sm:mb-6">
+                  <label className="block text-xs sm:text-sm font-semibold text-foreground mb-2 sm:mb-3">
                     {language === "ar" ? "📅 اختر اليوم" : "📅 Select Date"}
                   </label>
-                  <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2">
+                  <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:-mx-2 sm:px-2">
                     {deliveryDates.map((dateInfo, index) => (
                       <button
                         key={index}
@@ -1097,16 +1100,16 @@ export default function CheckoutPage() {
                           setSelectedDateIndex(index);
                           setSelectedTimeSlotId(null); // Reset time slot when date changes
                         }}
-                        className={`flex-shrink-0 min-w-[100px] p-3 rounded-xl border-2 transition-all text-center ${
+                        className={`flex-shrink-0 min-w-[80px] sm:min-w-[100px] p-2 sm:p-3 rounded-xl border-2 transition-all text-center ${
                           selectedDateIndex === index
                             ? "border-primary bg-primary/10 text-primary"
                             : "border-border bg-background hover:border-primary/50 text-foreground"
                         }`}
                       >
-                        <div className="font-semibold text-sm">
+                        <div className="font-semibold text-xs sm:text-sm">
                           {language === "ar" ? dateInfo.dayLabelAr : dateInfo.dayLabel}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-1">
+                        <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
                           {language === "ar" ? dateInfo.dateLabelAr : dateInfo.dateLabel}
                         </div>
                       </button>
@@ -1116,37 +1119,37 @@ export default function CheckoutPage() {
 
                 {/* Time Slot Selection */}
                 <div>
-                  <label className="block text-sm font-semibold text-foreground mb-3">
+                  <label className="block text-xs sm:text-sm font-semibold text-foreground mb-2 sm:mb-3">
                     {language === "ar" ? "🕐 اختر الوقت" : "🕐 Select Time Slot"}
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {deliveryDates[selectedDateIndex]?.slots.map((slot) => (
                       <button
                         key={slot.id}
                         type="button"
                         onClick={() => setSelectedTimeSlotId(slot.id)}
-                        className={`p-4 rounded-xl border-2 transition-all text-left ${
+                        className={`p-2.5 sm:p-4 rounded-xl border-2 transition-all text-left ${
                           selectedTimeSlotId === slot.id
                             ? "border-primary bg-primary/10"
                             : "border-border bg-background hover:border-primary/50"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
                           <div
-                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                            className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                               selectedTimeSlotId === slot.id
                                 ? "border-primary bg-primary"
                                 : "border-border"
                             }`}
                           >
                             {selectedTimeSlotId === slot.id && (
-                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="w-2 h-2 sm:w-3 sm:h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
                             )}
                           </div>
-                          <div>
-                            <div className={`font-medium text-sm ${selectedTimeSlotId === slot.id ? "text-primary" : "text-foreground"}`}>
+                          <div className="min-w-0">
+                            <div className={`font-medium text-xs sm:text-sm ${selectedTimeSlotId === slot.id ? "text-primary" : "text-foreground"}`}>
                               {language === "ar" ? slot.labelAr : slot.label}
                             </div>
                           </div>
@@ -1158,16 +1161,16 @@ export default function CheckoutPage() {
 
                 {/* Selected Time Summary */}
                 {selectedTimeSlotId && (
-                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="mt-3 sm:mt-4 p-2.5 sm:p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                     <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span className="text-sm font-medium">
+                      <span className="text-xs sm:text-sm font-medium">
                         {language === "ar" ? "موعد التوصيل المحدد:" : "Scheduled Delivery:"}
                       </span>
                     </div>
-                    <p className="text-sm text-green-600 dark:text-green-500 mt-1 mr-7">
+                    <p className="text-xs sm:text-sm text-green-600 dark:text-green-500 mt-1 mr-6 sm:mr-7">
                       {getSelectedDeliverySlotInfo()}
                     </p>
                   </div>
@@ -1175,24 +1178,24 @@ export default function CheckoutPage() {
               </div>
 
               {/* Payment Method Selection */}
-              <div className="card-premium p-6">
-                <h2 className="text-2xl font-bold text-foreground mb-6">
+              <div className="card-premium p-4 sm:p-6">
+                <h2 className="text-lg sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">
                   {language === "ar" ? "طريقة الدفع" : "Payment Method"}
                 </h2>
 
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Credit Card Option */}
                   <div
                     onClick={() => handlePaymentMethodSelect("card")}
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    className={`p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all ${
                       paymentMethod === "card"
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
                     }`}
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
+                        className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1 ${
                           paymentMethod === "card"
                             ? "border-primary bg-primary"
                             : "border-border"
@@ -1200,7 +1203,7 @@ export default function CheckoutPage() {
                       >
                         {paymentMethod === "card" && (
                           <svg
-                            className="w-3 h-3 text-white"
+                            className="w-2 h-2 sm:w-3 sm:h-3 text-white"
                             fill="currentColor"
                             viewBox="0 0 20 20"
                           >
@@ -1212,30 +1215,30 @@ export default function CheckoutPage() {
                           </svg>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground text-sm sm:text-base">
                           Credit Card
                         </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                           Pay securely with Visa, Mastercard, or American Express
                         </p>
                       </div>
-                      <div className="text-2xl">💳</div>
+                      <div className="text-xl sm:text-2xl">💳</div>
                     </div>
                   </div>
 
                   {/* Cash on Delivery Option */}
                   <div
                     onClick={() => handlePaymentMethodSelect("cod")}
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                    className={`p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all ${
                       paymentMethod === "cod"
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
                     }`}
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       <div
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
+                        className={`w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-1 ${
                           paymentMethod === "cod"
                             ? "border-primary bg-primary"
                             : "border-border"
@@ -1243,7 +1246,7 @@ export default function CheckoutPage() {
                       >
                         {paymentMethod === "cod" && (
                           <svg
-                            className="w-3 h-3 text-white"
+                            className="w-2 h-2 sm:w-3 sm:h-3 text-white"
                             fill="currentColor"
                             viewBox="0 0 20 20"
                           >
@@ -1255,15 +1258,15 @@ export default function CheckoutPage() {
                           </svg>
                         )}
                       </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground text-sm sm:text-base">
                           Cash on Delivery
                         </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                           Pay with cash when your order arrives
                         </p>
                       </div>
-                      <div className="text-2xl">💵</div>
+                      <div className="text-xl sm:text-2xl">💵</div>
                     </div>
                   </div>
                 </div>
@@ -1277,7 +1280,7 @@ export default function CheckoutPage() {
                         : handleCODPayment
                     }
                     disabled={isProcessing || !selectedAddressId || !selectedTimeSlotId}
-                    className="w-full btn-primary py-3 rounded-lg font-semibold text-base mt-6 disabled:opacity-50 transition-all"
+                    className="w-full btn-primary py-2.5 sm:py-3 rounded-lg font-semibold text-sm sm:text-base mt-4 sm:mt-6 disabled:opacity-50 transition-all"
                   >
                     {isProcessing
                       ? (language === "ar" ? "جاري المعالجة..." : "Processing...")
@@ -1293,8 +1296,8 @@ export default function CheckoutPage() {
               </div>
 
               {/* Order Info */}
-              <div className="card-premium p-6 bg-secondary/10">
-                <p className="text-sm text-muted-foreground">
+              <div className="card-premium p-3 sm:p-6 bg-secondary/10">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   ℹ️ Your order will be processed securely. No card details are
                   stored on our servers.
                 </p>
@@ -1303,14 +1306,14 @@ export default function CheckoutPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="card-premium p-6 sticky top-24 space-y-4">
-                <h2 className="text-xl font-bold text-foreground">
+              <div className="card-premium p-4 sm:p-6 sticky top-24 space-y-3 sm:space-y-4">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">
                   Order Summary
                 </h2>
 
                 {/* Selected Address Preview */}
                 {selectedAddress && (
-                  <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                  <div className="bg-muted/50 rounded-lg p-2.5 sm:p-3 text-xs sm:text-sm">
                     <p className="font-medium text-foreground mb-1">Delivering to:</p>
                     <p className="text-muted-foreground">{selectedAddress.fullName}</p>
                     <p className="text-muted-foreground">{selectedAddress.area}, {selectedAddress.emirate}</p>
@@ -1318,16 +1321,16 @@ export default function CheckoutPage() {
                 )}
 
                 {/* Items */}
-                <div className="space-y-2 max-h-64 overflow-y-auto border-b border-border pb-4">
+                <div className="space-y-2 max-h-48 sm:max-h-64 overflow-y-auto border-b border-border pb-3 sm:pb-4">
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex justify-between items-center text-sm"
+                      className="flex justify-between items-center text-xs sm:text-sm"
                     >
-                      <span className="text-muted-foreground">
+                      <span className="text-muted-foreground line-clamp-1 flex-1 mr-2">
                         {getItemName(item)} x {item.quantity.toFixed(3)} {language === "ar" ? "جرام" : "gr"}
                       </span>
-                      <span className="font-semibold">
+                      <span className="font-semibold whitespace-nowrap">
                         <PriceDisplay price={item.price * item.quantity} size="sm" />
                       </span>
                     </div>
@@ -1335,22 +1338,22 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Totals */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-semibold"><PriceDisplay price={subtotal} size="md" /></span>
                   </div>
-                  <div className="flex justify-between items-center bg-secondary/10 -mx-6 px-6 py-2">
+                  <div className="flex justify-between items-center bg-secondary/10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 text-sm">
                     <span className="text-muted-foreground">VAT (5%)</span>
                     <span className="font-semibold text-secondary">
                       <PriceDisplay price={vat} size="md" />
                     </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-border">
-                    <span className="text-lg font-bold text-foreground">
+                    <span className="text-base sm:text-lg font-bold text-foreground">
                       Total
                     </span>
-                    <span className="text-2xl font-bold text-primary">
+                    <span className="text-xl sm:text-2xl font-bold text-primary">
                       <PriceDisplay price={total} size="lg" />
                     </span>
                   </div>
@@ -1359,7 +1362,7 @@ export default function CheckoutPage() {
                 {/* Back to Basket */}
                 <button
                   onClick={() => navigate("/basket")}
-                  className="btn-outline w-full py-2 text-sm rounded-lg"
+                  className="btn-outline w-full py-2 text-xs sm:text-sm rounded-lg"
                 >
                   Back to Basket
                 </button>

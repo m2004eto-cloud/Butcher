@@ -118,8 +118,8 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
 
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-border shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center py-3 sm:py-4">
           {/* Left: Language Switcher */}
           <div className="flex-1 flex items-center">
             <LanguageSwitcher variant="compact" />
@@ -131,17 +131,17 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
             className="flex-shrink-0 text-center"
           >
             <div className="inline-block">
-              <h1 className="text-2xl font-bold text-primary">
+              <h1 className="text-lg sm:text-2xl font-bold text-primary">
                 🥩 {t("header.title")}
               </h1>
-              <p className="text-xs text-muted-foreground font-medium">
+              <p className="text-[10px] sm:text-xs text-muted-foreground font-medium hidden xs:block">
                 {t("header.subtitle")}
               </p>
             </div>
           </Link>
 
           {/* Right: Auth & Basket */}
-          <div className="flex-1 flex justify-end items-center gap-4">
+          <div className="flex-1 flex justify-end items-center gap-2 sm:gap-4">
             {/* Chat Icon - Only for logged in users */}
             {isLoggedIn && (
               <div className="relative" ref={chatRef}>
