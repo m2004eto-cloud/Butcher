@@ -25,6 +25,76 @@ L.Icon.Default.mergeOptions({
 
 type PaymentMethod = "card" | "cod" | null;
 
+// Delivery time slot types
+interface TimeSlot {
+  id: string;
+  startTime: string;
+  endTime: string;
+  label: string;
+  labelAr: string;
+}
+
+interface DeliveryDate {
+  date: Date;
+  dayLabel: string;
+  dayLabelAr: string;
+  dateLabel: string;
+  dateLabelAr: string;
+  slots: TimeSlot[];
+}
+
+// Generate time slots for delivery
+const generateTimeSlots = (): TimeSlot[] => [
+  { id: "morning", startTime: "09:00", endTime: "12:00", label: "Morning (9 AM - 12 PM)", labelAr: "صباحاً (9 ص - 12 م)" },
+  { id: "afternoon", startTime: "12:00", endTime: "15:00", label: "Afternoon (12 PM - 3 PM)", labelAr: "ظهراً (12 م - 3 م)" },
+  { id: "evening", startTime: "15:00", endTime: "18:00", label: "Evening (3 PM - 6 PM)", labelAr: "مساءً (3 م - 6 م)" },
+  { id: "night", startTime: "18:00", endTime: "21:00", label: "Night (6 PM - 9 PM)", labelAr: "ليلاً (6 م - 9 م)" },
+];
+
+// Generate delivery dates (today + next 6 days)
+const generateDeliveryDates = (): DeliveryDate[] => {
+  const dates: DeliveryDate[] = [];
+  const today = new Date();
+  const currentHour = today.getHours();
+  
+  const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const dayNamesAr = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthNamesAr = ["يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+  
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    
+    const isToday = i === 0;
+    const isTomorrow = i === 1;
+    
+    // Filter available slots for today based on current time
+    let availableSlots = generateTimeSlots();
+    if (isToday) {
+      availableSlots = availableSlots.filter(slot => {
+        const slotStartHour = parseInt(slot.startTime.split(":")[0]);
+        // Only show slots that start at least 2 hours from now
+        return slotStartHour > currentHour + 2;
+      });
+    }
+    
+    // Skip days with no available slots
+    if (availableSlots.length === 0) continue;
+    
+    dates.push({
+      date,
+      dayLabel: isToday ? "Today" : isTomorrow ? "Tomorrow" : dayNames[date.getDay()],
+      dayLabelAr: isToday ? "اليوم" : isTomorrow ? "غداً" : dayNamesAr[date.getDay()],
+      dateLabel: `${monthNames[date.getMonth()]} ${date.getDate()}`,
+      dateLabelAr: `${date.getDate()} ${monthNamesAr[date.getMonth()]}`,
+      slots: availableSlots,
+    });
+  }
+  
+  return dates;
+};
+
 interface AddressFormData {
   label: string;
   fullName: string;
@@ -480,6 +550,11 @@ export default function CheckoutPage() {
   
   // View location modal
   const [viewingAddress, setViewingAddress] = useState<Address | null>(null);
+  
+  // Delivery time slot state
+  const [deliveryDates] = useState<DeliveryDate[]>(generateDeliveryDates);
+  const [selectedDateIndex, setSelectedDateIndex] = useState<number>(0);
+  const [selectedTimeSlotId, setSelectedTimeSlotId] = useState<string | null>(null);
 
   // Helper function to get localized item name
   const getItemName = (item: typeof items[0]) => {
@@ -537,13 +612,39 @@ export default function CheckoutPage() {
     setPaymentMethod(method);
   };
 
+  // Get selected delivery time slot info for order
+  const getSelectedDeliverySlotInfo = (): string => {
+    if (selectedDateIndex === null || !selectedTimeSlotId) return "";
+    const selectedDate = deliveryDates[selectedDateIndex];
+    const selectedSlot = selectedDate?.slots.find(s => s.id === selectedTimeSlotId);
+    if (!selectedDate || !selectedSlot) return "";
+    
+    const dateStr = selectedDate.date.toLocaleDateString("en-AE", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    return `${dateStr}, ${selectedSlot.label}`;
+  };
+
   const handleCardPayment = () => {
     if (!selectedAddressId) {
-      setError("Please select or add a delivery address");
+      setError(language === "ar" ? "يرجى اختيار عنوان التوصيل" : "Please select or add a delivery address");
+      return;
+    }
+    if (!selectedTimeSlotId) {
+      setError(language === "ar" ? "يرجى اختيار موعد التوصيل المفضل" : "Please select a preferred delivery time slot");
       return;
     }
     setIsProcessing(true);
-    navigate("/payment/card", { state: { addressId: selectedAddressId } });
+    const deliverySlotInfo = getSelectedDeliverySlotInfo();
+    navigate("/payment/card", { 
+      state: { 
+        addressId: selectedAddressId,
+        deliveryTimeSlot: deliverySlotInfo 
+      } 
+    });
   };
 
   const handleOpenAddModal = () => {
@@ -694,12 +795,21 @@ export default function CheckoutPage() {
 
   const handleCODPayment = async () => {
     if (!selectedAddressId) {
-      setError("Please select or add a delivery address");
+      setError(language === "ar" ? "يرجى اختيار عنوان التوصيل" : "Please select or add a delivery address");
+      return;
+    }
+
+    if (!selectedTimeSlotId) {
+      setError(language === "ar" ? "يرجى اختيار موعد التوصيل المفضل" : "Please select a preferred delivery time slot");
       return;
     }
 
     setIsProcessing(true);
     setError(null);
+
+    // Build delivery notes with time slot
+    const deliverySlotInfo = getSelectedDeliverySlotInfo();
+    const deliveryNotes = `Preferred Delivery Time: ${deliverySlotInfo}`;
 
     try {
       // Create order in backend
@@ -711,7 +821,7 @@ export default function CheckoutPage() {
         })),
         addressId: selectedAddressId,
         paymentMethod: "cod",
-        deliveryNotes: "",
+        deliveryNotes: deliveryNotes,
       });
 
       if (response.success && response.data) {
@@ -947,10 +1057,112 @@ export default function CheckoutPage() {
                 )}
               </div>
 
+              {/* Preferred Delivery Time Slot Section */}
+              <div className="card-premium p-6">
+                <h2 className="text-2xl font-bold text-foreground mb-2">
+                  {language === "ar" ? "وقت التوصيل المفضل" : "Preferred Delivery Time"}
+                </h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  {language === "ar" 
+                    ? "اختر اليوم والوقت الأنسب لاستلام طلبك" 
+                    : "Choose your preferred date and time for delivery"}
+                </p>
+
+                {/* Date Selection */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-foreground mb-3">
+                    {language === "ar" ? "📅 اختر اليوم" : "📅 Select Date"}
+                  </label>
+                  <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2">
+                    {deliveryDates.map((dateInfo, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          setSelectedDateIndex(index);
+                          setSelectedTimeSlotId(null); // Reset time slot when date changes
+                        }}
+                        className={`flex-shrink-0 min-w-[100px] p-3 rounded-xl border-2 transition-all text-center ${
+                          selectedDateIndex === index
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-background hover:border-primary/50 text-foreground"
+                        }`}
+                      >
+                        <div className="font-semibold text-sm">
+                          {language === "ar" ? dateInfo.dayLabelAr : dateInfo.dayLabel}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {language === "ar" ? dateInfo.dateLabelAr : dateInfo.dateLabel}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Time Slot Selection */}
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-3">
+                    {language === "ar" ? "🕐 اختر الوقت" : "🕐 Select Time Slot"}
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {deliveryDates[selectedDateIndex]?.slots.map((slot) => (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        onClick={() => setSelectedTimeSlotId(slot.id)}
+                        className={`p-4 rounded-xl border-2 transition-all text-left ${
+                          selectedTimeSlotId === slot.id
+                            ? "border-primary bg-primary/10"
+                            : "border-border bg-background hover:border-primary/50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                              selectedTimeSlotId === slot.id
+                                ? "border-primary bg-primary"
+                                : "border-border"
+                            }`}
+                          >
+                            {selectedTimeSlotId === slot.id && (
+                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                          <div>
+                            <div className={`font-medium text-sm ${selectedTimeSlotId === slot.id ? "text-primary" : "text-foreground"}`}>
+                              {language === "ar" ? slot.labelAr : slot.label}
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Selected Time Summary */}
+                {selectedTimeSlotId && (
+                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                    <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm font-medium">
+                        {language === "ar" ? "موعد التوصيل المحدد:" : "Scheduled Delivery:"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-green-600 dark:text-green-500 mt-1 mr-7">
+                      {getSelectedDeliverySlotInfo()}
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* Payment Method Selection */}
               <div className="card-premium p-6">
                 <h2 className="text-2xl font-bold text-foreground mb-6">
-                  Payment Method
+                  {language === "ar" ? "طريقة الدفع" : "Payment Method"}
                 </h2>
 
                 <div className="space-y-4">
@@ -1049,16 +1261,18 @@ export default function CheckoutPage() {
                         ? handleCardPayment
                         : handleCODPayment
                     }
-                    disabled={isProcessing || !selectedAddressId}
+                    disabled={isProcessing || !selectedAddressId || !selectedTimeSlotId}
                     className="w-full btn-primary py-3 rounded-lg font-semibold text-base mt-6 disabled:opacity-50 transition-all"
                   >
                     {isProcessing
-                      ? "Processing..."
+                      ? (language === "ar" ? "جاري المعالجة..." : "Processing...")
                       : !selectedAddressId
-                      ? "Select a Delivery Address"
+                      ? (language === "ar" ? "اختر عنوان التوصيل" : "Select a Delivery Address")
+                      : !selectedTimeSlotId
+                      ? (language === "ar" ? "اختر موعد التوصيل" : "Select a Delivery Time")
                       : paymentMethod === "card"
-                      ? "Continue to Payment"
-                      : "Confirm Order"}
+                      ? (language === "ar" ? "المتابعة للدفع" : "Continue to Payment")
+                      : (language === "ar" ? "تأكيد الطلب" : "Confirm Order")}
                   </button>
                 )}
               </div>

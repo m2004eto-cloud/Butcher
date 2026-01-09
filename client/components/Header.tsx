@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bell, Package, Truck, CreditCard, CheckCircle, X, Trash2, FileText } from "lucide-react";
+import { Bell, Package, Truck, CreditCard, CheckCircle, X, Trash2, FileText, MessageCircle, Send } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useBasket } from "@/context/BasketContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -39,7 +39,12 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
   
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Notification | null>(null);
+  const [showChat, setShowChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ id: string; text: string; sender: "user" | "admin"; timestamp: Date }[]>([]);
+  const [newMessage, setNewMessage] = useState("");
   const notificationRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
 
   // Filter notifications for user (exclude admin-only types like stock)
   const userNotifications = notifications.filter(n => 
@@ -54,10 +59,69 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setShowNotifications(false);
       }
+      if (chatRef.current && !chatRef.current.contains(event.target as Node)) {
+        setShowChat(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Load chat messages from localStorage
+  useEffect(() => {
+    if (user?.id) {
+      const savedMessages = localStorage.getItem(`chat_messages_${user.id}`);
+      if (savedMessages) {
+        try {
+          const parsed = JSON.parse(savedMessages);
+          setChatMessages(parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })));
+        } catch (e) {
+          console.error("Failed to parse chat messages", e);
+        }
+      }
+    }
+  }, [user?.id]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
+    }
+  }, [chatMessages, showChat]);
+
+  // Send chat message
+  const handleSendMessage = () => {
+    if (!newMessage.trim() || !user?.id) return;
+
+    const message = {
+      id: `msg_${Date.now()}`,
+      text: newMessage.trim(),
+      sender: "user" as const,
+      timestamp: new Date(),
+    };
+
+    const updatedMessages = [...chatMessages, message];
+    setChatMessages(updatedMessages);
+    localStorage.setItem(`chat_messages_${user.id}`, JSON.stringify(updatedMessages));
+    setNewMessage("");
+
+    // Simulate admin auto-reply after 1 second
+    setTimeout(() => {
+      const autoReply = {
+        id: `msg_${Date.now()}`,
+        text: language === "ar" 
+          ? "شكراً لرسالتك! سيتواصل معك فريق الدعم قريباً."
+          : "Thank you for your message! Our support team will get back to you shortly.",
+        sender: "admin" as const,
+        timestamp: new Date(),
+      };
+      setChatMessages(prev => {
+        const updated = [...prev, autoReply];
+        localStorage.setItem(`chat_messages_${user.id}`, JSON.stringify(updated));
+        return updated;
+      });
+    }, 1000);
+  };
 
   const handleNotificationClick = (notification: Notification) => {
     markAsRead(notification.id);
@@ -106,6 +170,108 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
 
           {/* Right: Auth & Basket */}
           <div className="flex-1 flex justify-end items-center gap-4">
+            {/* Chat Icon - Only for logged in users */}
+            {isLoggedIn && (
+              <div className="relative" ref={chatRef}>
+                <button
+                  onClick={() => setShowChat(!showChat)}
+                  className="relative p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  aria-label="Chat with Admin"
+                >
+                  <MessageCircle className="w-5 h-5 text-primary" />
+                </button>
+
+                {/* Chat Dropdown */}
+                {showChat && (
+                  <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
+                    {/* Chat Header */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary to-primary/80 text-white">
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="w-5 h-5" />
+                        <div>
+                          <h3 className="font-semibold text-sm">
+                            {language === "ar" ? "الدعم الفني" : "Customer Support"}
+                          </h3>
+                          <p className="text-xs opacity-80">
+                            {language === "ar" ? "نحن هنا للمساعدة" : "We're here to help"}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setShowChat(false)}
+                        className="p-1 hover:bg-white/20 rounded-full transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Chat Messages */}
+                    <div 
+                      ref={chatMessagesRef}
+                      className="h-64 overflow-y-auto p-4 space-y-3 bg-gray-50"
+                    >
+                      {chatMessages.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                          <MessageCircle className="w-12 h-12 mb-2 opacity-50" />
+                          <p className="text-sm text-center">
+                            {language === "ar" 
+                              ? "ابدأ محادثة مع فريق الدعم"
+                              : "Start a conversation with our support team"}
+                          </p>
+                        </div>
+                      ) : (
+                        chatMessages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+                          >
+                            <div
+                              className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                                msg.sender === "user"
+                                  ? "bg-primary text-white rounded-br-md"
+                                  : "bg-white text-gray-800 border border-gray-200 rounded-bl-md"
+                              }`}
+                            >
+                              <p className="text-sm">{msg.text}</p>
+                              <p className={`text-xs mt-1 ${
+                                msg.sender === "user" ? "text-white/70" : "text-gray-400"
+                              }`}>
+                                {msg.timestamp.toLocaleTimeString(language === "ar" ? "ar-AE" : "en-US", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Chat Input */}
+                    <div className="p-3 border-t bg-white">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                          placeholder={language === "ar" ? "اكتب رسالتك..." : "Type your message..."}
+                          className="flex-1 px-4 py-2 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                        />
+                        <button
+                          onClick={handleSendMessage}
+                          disabled={!newMessage.trim()}
+                          className="p-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Send className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Notification Bell - Only for logged in users */}
             {isLoggedIn && (
               <div className="relative" ref={notificationRef}>

@@ -21,8 +21,9 @@ export default function PaymentCardPage() {
   const { user } = useAuth();
   const { addNotification } = useNotifications();
   
-  // Get addressId from navigation state (passed from Checkout)
-  const addressId = (location.state as { addressId?: string })?.addressId || "";
+  // Get addressId and delivery time slot from navigation state (passed from Checkout)
+  const addressId = (location.state as { addressId?: string; deliveryTimeSlot?: string })?.addressId || "";
+  const deliveryTimeSlot = (location.state as { addressId?: string; deliveryTimeSlot?: string })?.deliveryTimeSlot || "";
   
   // State for delivery address
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
@@ -187,6 +188,16 @@ export default function PaymentCardPage() {
     setIsProcessing(true);
     setApiError(null);
 
+    // Build delivery notes with time slot and VAT reference
+    const deliveryNotesParts: string[] = [];
+    if (deliveryTimeSlot) {
+      deliveryNotesParts.push(`Preferred Delivery Time: ${deliveryTimeSlot}`);
+    }
+    if (formData.vat_reference) {
+      deliveryNotesParts.push(`VAT Reference: ${formData.vat_reference}`);
+    }
+    const deliveryNotes = deliveryNotesParts.join(" | ");
+
     try {
       // Create order in the backend
       const response = await ordersApi.create({
@@ -197,9 +208,7 @@ export default function PaymentCardPage() {
         })),
         addressId: addressId,
         paymentMethod: "card",
-        deliveryNotes: formData.vat_reference
-          ? `VAT Reference: ${formData.vat_reference}`
-          : "",
+        deliveryNotes: deliveryNotes,
       });
 
       if (response.success && response.data) {
