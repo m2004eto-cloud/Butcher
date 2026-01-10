@@ -260,19 +260,19 @@ export function UsersTab({ onNavigate }: AdminTabProps) {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {Object.entries(ROLE_CONFIG).map(([role, config]) => {
             const count = stats[role as keyof typeof stats] || 0;
             const Icon = config.icon;
             return (
-              <div key={role} className="bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-500">{config.label}s</p>
-                    <p className="text-2xl font-bold text-slate-900">{count}</p>
+              <div key={role} className="bg-white rounded-xl shadow-sm p-3 sm:p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-slate-500 truncate">{config.label}s</p>
+                    <p className="text-lg sm:text-2xl font-bold text-slate-900">{count}</p>
                   </div>
-                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", config.color)}>
-                    <Icon className="w-5 h-5" />
+                  <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0", config.color)}>
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                 </div>
               </div>
@@ -300,11 +300,11 @@ export function UsersTab({ onNavigate }: AdminTabProps) {
               )}
             />
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-nowrap overflow-x-auto pb-2 sm:pb-0 sm:flex-wrap">
             <button
               onClick={() => setRoleFilter("all")}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
                 roleFilter === "all"
                   ? "bg-primary text-white"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -317,7 +317,7 @@ export function UsersTab({ onNavigate }: AdminTabProps) {
                 key={role}
                 onClick={() => setRoleFilter(role as UserRole)}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
                   roleFilter === role
                     ? "bg-primary text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -347,43 +347,43 @@ export function UsersTab({ onNavigate }: AdminTabProps) {
               <thead className="bg-slate-50">
                 <tr>
                   <th className={cn(
-                    "px-6 py-3 text-xs font-semibold text-slate-500 uppercase",
+                    "px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap",
                     isRTL ? "text-right" : "text-left"
                   )}>
                     {t.user}
                   </th>
                   <th className={cn(
-                    "px-6 py-3 text-xs font-semibold text-slate-500 uppercase",
+                    "px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden sm:table-cell",
                     isRTL ? "text-right" : "text-left"
                   )}>
                     {t.contact}
                   </th>
                   <th className={cn(
-                    "px-6 py-3 text-xs font-semibold text-slate-500 uppercase",
+                    "px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap",
                     isRTL ? "text-right" : "text-left"
                   )}>
                     {t.role}
                   </th>
                   <th className={cn(
-                    "px-6 py-3 text-xs font-semibold text-slate-500 uppercase",
+                    "px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden lg:table-cell",
                     isRTL ? "text-right" : "text-left"
                   )}>
                     {t.emirate}
                   </th>
                   <th className={cn(
-                    "px-6 py-3 text-xs font-semibold text-slate-500 uppercase",
+                    "px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden md:table-cell",
                     isRTL ? "text-right" : "text-left"
                   )}>
                     {t.status}
                   </th>
                   <th className={cn(
-                    "px-6 py-3 text-xs font-semibold text-slate-500 uppercase",
+                    "px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden lg:table-cell",
                     isRTL ? "text-right" : "text-left"
                   )}>
                     {t.joined}
                   </th>
                   <th className={cn(
-                    "px-6 py-3 text-xs font-semibold text-slate-500 uppercase",
+                    "px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap",
                     isRTL ? "text-left" : "text-right"
                   )}>
                     {t.actions}
@@ -396,38 +396,38 @@ export function UsersTab({ onNavigate }: AdminTabProps) {
                   const RoleIcon = roleConfig.icon;
                   return (
                     <tr key={user.id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center">
-                            <span className="text-lg font-bold text-slate-600">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-200 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm sm:text-lg font-bold text-slate-600">
                               {user.firstName[0]}
                             </span>
                           </div>
-                          <div>
-                            <p className="font-medium text-slate-900">
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-900 text-sm sm:text-base truncate">
                               {user.firstName} {user.familyName}
                             </p>
-                            <p className="text-xs text-slate-500">{user.id}</p>
+                            <p className="text-xs text-slate-500 truncate sm:hidden">{user.email}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">
                         <p className="text-sm text-slate-900">{user.email}</p>
                         <p className="text-xs text-slate-500">{user.mobile}</p>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
                         <span className={cn(
                           "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
                           roleConfig.color
                         )}>
                           <RoleIcon className="w-3 h-3" />
-                          {roleConfig.label}
+                          <span className="hidden sm:inline">{roleConfig.label}</span>
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-500">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-slate-500 hidden lg:table-cell">
                         {user.emirate}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 hidden md:table-cell">
                         <div className="flex flex-col gap-1">
                           <span className={cn(
                             "px-2 py-0.5 rounded-full text-xs font-medium w-fit",
@@ -444,17 +444,17 @@ export function UsersTab({ onNavigate }: AdminTabProps) {
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-500">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-slate-500 hidden lg:table-cell">
                         {new Date(user.createdAt).toLocaleDateString(isRTL ? 'ar-AE' : 'en-AE')}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
                         <div className={cn(
-                          "flex items-center gap-2",
+                          "flex items-center gap-1 sm:gap-2",
                           isRTL ? "justify-start" : "justify-end"
                         )}>
                           <button
                             onClick={() => setEditModal(user)}
-                            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                            className="p-1.5 sm:p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
                             title={t.edit}
                           >
                             <Edit2 className="w-4 h-4" />

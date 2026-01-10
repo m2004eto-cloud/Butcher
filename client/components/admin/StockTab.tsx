@@ -307,25 +307,25 @@ function InventoryTable({
       <table className="w-full">
         <thead className="bg-slate-50">
           <tr>
-            <th className={cn("px-4 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+            <th className={cn("px-3 sm:px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-right" : "text-left")}>
               {t.product}
             </th>
-            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
+            <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden sm:table-cell">
               {t.quantity}
             </th>
-            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
+            <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden md:table-cell">
               {t.reserved}
             </th>
-            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
+            <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase whitespace-nowrap">
               {t.available}
             </th>
-            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
+            <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden lg:table-cell">
               {t.threshold}
             </th>
-            <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
+            <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase whitespace-nowrap">
               {t.status}
             </th>
-            <th className={cn("px-4 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-left" : "text-right")}>
+            <th className={cn("px-3 sm:px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-left" : "text-right")}>
               {t.actions}
             </th>
           </tr>
@@ -336,51 +336,54 @@ function InventoryTable({
             const isOut = item.availableQuantity === 0;
             return (
               <tr key={item.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3">
-                  <span className="font-mono text-sm">{item.productId}</span>
+                <td className="px-3 sm:px-4 py-3">
+                  <span className="font-mono text-xs sm:text-sm truncate block max-w-[100px] sm:max-w-none">{item.productId}</span>
                 </td>
-                <td className="px-4 py-3 text-center font-medium">
+                <td className="px-3 sm:px-4 py-3 text-center font-medium hidden sm:table-cell">
                   <WeightDisplay grams={item.quantity} isRTL={isRTL} />
                 </td>
-                <td className="px-4 py-3 text-center text-slate-500">
+                <td className="px-3 sm:px-4 py-3 text-center text-slate-500 hidden md:table-cell">
                   <WeightDisplay grams={item.reservedQuantity} isRTL={isRTL} />
                 </td>
-                <td className="px-4 py-3 text-center">
+                <td className="px-3 sm:px-4 py-3 text-center">
                   <WeightDisplay 
                     grams={item.availableQuantity} 
                     isRTL={isRTL}
                     className={cn(
-                      "font-semibold",
+                      "font-semibold text-xs sm:text-sm",
                       isOut ? "text-red-600" : isLow ? "text-orange-600" : "text-green-600"
                     )}
                   />
                 </td>
-                <td className="px-4 py-3 text-center text-slate-500">
+                <td className="px-3 sm:px-4 py-3 text-center text-slate-500 hidden lg:table-cell">
                   <WeightDisplay grams={item.lowStockThreshold} isRTL={isRTL} />
                 </td>
-                <td className="px-4 py-3 text-center">
+                <td className="px-3 sm:px-4 py-3 text-center">
                   {isOut ? (
-                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                      {t.outOfStock}
+                    <span className="px-1.5 sm:px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium whitespace-nowrap">
+                      <span className="hidden sm:inline">{t.outOfStock}</span>
+                      <span className="sm:hidden">Out</span>
                     </span>
                   ) : isLow ? (
-                    <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
-                      {t.lowStock}
+                    <span className="px-1.5 sm:px-2 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium whitespace-nowrap">
+                      <span className="hidden sm:inline">{t.lowStock}</span>
+                      <span className="sm:hidden">Low</span>
                     </span>
                   ) : (
-                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                      {t.inStock}
+                    <span className="px-1.5 sm:px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium whitespace-nowrap">
+                      <span className="hidden sm:inline">{t.inStock}</span>
+                      <span className="sm:hidden">OK</span>
                     </span>
                   )}
                 </td>
-                <td className="px-4 py-3">
-                  <div className={cn("flex items-center gap-2", isRTL ? "justify-start" : "justify-end")}>
+                <td className="px-3 sm:px-4 py-3">
+                  <div className={cn("flex items-center gap-1 sm:gap-2", isRTL ? "justify-start" : "justify-end")}>
                     <button
                       onClick={() => onRestock(item)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-primary text-white rounded-lg text-sm hover:bg-primary/90"
+                      className="flex items-center gap-1 px-2 sm:px-3 py-1.5 bg-primary text-white rounded-lg text-xs sm:text-sm hover:bg-primary/90"
                     >
-                      <Plus className="w-4 h-4" />
-                      {t.restock}
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">{t.restock}</span>
                     </button>
                     <button
                       onClick={() => onSettings(item)}

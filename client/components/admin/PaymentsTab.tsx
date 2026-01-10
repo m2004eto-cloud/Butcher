@@ -146,7 +146,7 @@ export function PaymentsTab({ onNavigate }: AdminTabProps) {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           icon={DollarSign}
           label={language === 'ar' ? 'إجمالي الإيرادات' : 'Total Revenue'}
@@ -226,25 +226,25 @@ export function PaymentsTab({ onNavigate }: AdminTabProps) {
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className={cn("px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider", language === 'ar' ? 'text-right' : 'text-left')}>
+                  <th className={cn("px-3 sm:px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap", language === 'ar' ? 'text-right' : 'text-left')}>
                     {language === 'ar' ? 'الإجراءات' : 'Actions'}
                   </th>
-                  <th className={cn("px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider", language === 'ar' ? 'text-right' : 'text-left')}>
+                  <th className={cn("px-3 sm:px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap hidden md:table-cell", language === 'ar' ? 'text-right' : 'text-left')}>
                     {language === 'ar' ? 'التاريخ' : 'Date'}
                   </th>
-                  <th className={cn("px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider", language === 'ar' ? 'text-right' : 'text-left')}>
+                  <th className={cn("px-3 sm:px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap", language === 'ar' ? 'text-right' : 'text-left')}>
                     {language === 'ar' ? 'الحالة' : 'Status'}
                   </th>
-                  <th className={cn("px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider", language === 'ar' ? 'text-right' : 'text-left')}>
+                  <th className={cn("px-3 sm:px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap", language === 'ar' ? 'text-right' : 'text-left')}>
                     {language === 'ar' ? 'المبلغ' : 'Amount'}
                   </th>
-                  <th className={cn("px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider", language === 'ar' ? 'text-right' : 'text-left')}>
+                  <th className={cn("px-3 sm:px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell", language === 'ar' ? 'text-right' : 'text-left')}>
                     {language === 'ar' ? 'الطريقة' : 'Method'}
                   </th>
-                  <th className={cn("px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider", language === 'ar' ? 'text-right' : 'text-left')}>
+                  <th className={cn("px-3 sm:px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell", language === 'ar' ? 'text-right' : 'text-left')}>
                     {language === 'ar' ? 'الطلب' : 'Order'}
                   </th>
-                  <th className={cn("px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider", language === 'ar' ? 'text-right' : 'text-left')}>
+                  <th className={cn("px-3 sm:px-4 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell", language === 'ar' ? 'text-right' : 'text-left')}>
                     {language === 'ar' ? 'المعاملة' : 'Transaction'}
                   </th>
                 </tr>
@@ -256,12 +256,12 @@ export function PaymentsTab({ onNavigate }: AdminTabProps) {
 
                   return (
                     <tr key={payment.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-4">
-                        <div className={cn("flex gap-2", language === 'ar' ? 'justify-start' : 'justify-start')}>
+                      <td className="px-3 sm:px-4 py-3 sm:py-4">
+                        <div className={cn("flex gap-1 sm:gap-2", language === 'ar' ? 'justify-start' : 'justify-start')}>
                           {payment.status === "captured" && (
                             <button
                               onClick={() => setRefundModal(payment)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                              className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg"
                               title={language === 'ar' ? 'استرداد' : 'Process refund'}
                             >
                               <RotateCcw className="w-4 h-4" />
@@ -269,30 +269,30 @@ export function PaymentsTab({ onNavigate }: AdminTabProps) {
                           )}
                           <button
                             onClick={() => setSelectedPayment(payment)}
-                            className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                            className="p-1.5 sm:p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
                             title={language === 'ar' ? 'عرض التفاصيل' : 'View details'}
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-slate-500">
+                      <td className="px-3 sm:px-4 py-3 sm:py-4 text-sm text-slate-500 hidden md:table-cell">
                         {new Date(payment.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 sm:px-4 py-3 sm:py-4">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+                            "inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-xs font-medium",
                             config.bg,
                             config.color
                           )}
                         >
                           <StatusIcon className="w-3 h-3" />
-                          {language === 'ar' ? config.labelAr : config.label}
+                          <span className="hidden sm:inline">{language === 'ar' ? config.labelAr : config.label}</span>
                         </span>
                       </td>
-                      <td className="px-4 py-4">
-                        <p className="font-medium text-slate-900 flex items-center gap-1">
+                      <td className="px-3 sm:px-4 py-3 sm:py-4">
+                        <p className="font-medium text-slate-900 flex items-center gap-1 text-xs sm:text-sm">
                           {payment.amount.toFixed(2)} <CurrencySymbol size="sm" />
                         </p>
                         {payment.refundedAmount ? (
@@ -301,13 +301,13 @@ export function PaymentsTab({ onNavigate }: AdminTabProps) {
                           </p>
                         ) : null}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 sm:px-4 py-3 sm:py-4 hidden sm:table-cell">
                         <span className="capitalize text-sm">{payment.method === 'card' ? (language === 'ar' ? 'بطاقة' : 'Card') : payment.method === 'cod' ? (language === 'ar' ? 'نقداً' : 'Cod') : payment.method === 'bank_transfer' ? (language === 'ar' ? 'تحويل بنكي' : 'Bank_transfer') : payment.method}</span>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 sm:px-4 py-3 sm:py-4 hidden lg:table-cell">
                         <p className="text-sm text-slate-900">{payment.orderNumber || payment.orderId}</p>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-3 sm:px-4 py-3 sm:py-4 hidden lg:table-cell">
                         <p className="font-mono text-sm text-slate-900">
                           {payment.gatewayTransactionId || "—"}
                         </p>
@@ -355,14 +355,14 @@ function StatCard({
   bg: string;
 }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4">
-      <div className="flex items-center gap-3">
-        <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", bg)}>
-          <Icon className={cn("w-5 h-5", color)} />
+    <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center flex-shrink-0", bg)}>
+          <Icon className={cn("w-4 h-4 sm:w-5 sm:h-5", color)} />
         </div>
-        <div>
-          <p className="text-sm text-slate-500">{label}</p>
-          <p className="text-lg font-semibold text-slate-900">{value}</p>
+        <div className="min-w-0">
+          <p className="text-xs sm:text-sm text-slate-500 truncate">{label}</p>
+          <p className="text-sm sm:text-lg font-semibold text-slate-900 truncate">{value}</p>
         </div>
       </div>
     </div>

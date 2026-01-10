@@ -300,13 +300,13 @@ export function OrdersTab({ onNavigate, selectedOrderId, onClearSelection }: Adm
               className={cn("w-full py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none", isRTL ? "pr-10 pl-4" : "pl-10 pr-4")}
             />
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-nowrap overflow-x-auto pb-2 sm:pb-0 sm:flex-wrap">
             {ORDER_STATUSES.map((status) => (
               <button
                 key={status.value}
                 onClick={() => setStatusFilter(status.value)}
                 className={cn(
-                  "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
                   statusFilter === status.value
                     ? "bg-primary text-white"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
@@ -335,28 +335,28 @@ export function OrdersTab({ onNavigate, selectedOrderId, onClearSelection }: Adm
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                  <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-right" : "text-left")}>
                     {t.order}
                   </th>
-                  <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                  <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden sm:table-cell", isRTL ? "text-right" : "text-left")}>
                     {t.customer}
                   </th>
-                  <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                  <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden lg:table-cell", isRTL ? "text-right" : "text-left")}>
                     {t.items}
                   </th>
-                  <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                  <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-right" : "text-left")}>
                     {t.total}
                   </th>
-                  <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                  <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-right" : "text-left")}>
                     {t.status}
                   </th>
-                  <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                  <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden md:table-cell", isRTL ? "text-right" : "text-left")}>
                     {t.payment}
                   </th>
-                  <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                  <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden md:table-cell", isRTL ? "text-right" : "text-left")}>
                     {t.date}
                   </th>
-                  <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-left" : "text-right")}>
+                  <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-left" : "text-right")}>
                     {t.actions}
                   </th>
                 </tr>
@@ -364,12 +364,12 @@ export function OrdersTab({ onNavigate, selectedOrderId, onClearSelection }: Adm
               <tbody className="divide-y divide-slate-200">
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4">
-                      <span className="font-mono text-sm font-medium text-blue-600">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <span className="font-mono text-xs sm:text-sm font-medium text-blue-600">
                         {order.orderNumber}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">
                       <div>
                         <p className="text-sm font-medium text-slate-900">
                           {order.customerName}
@@ -379,19 +379,19 @@ export function OrdersTab({ onNavigate, selectedOrderId, onClearSelection }: Adm
                         </p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-slate-500 hidden lg:table-cell">
                       {order.items.length} {t.items.toLowerCase()}
                     </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-slate-900">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-900">
                       <span className="flex items-center gap-1">
                         <CurrencySymbol size="sm" />
                         {order.total.toFixed(2)}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <OrderStatusBadge status={order.status} t={t} />
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 hidden md:table-cell">
                       <div>
                         <PaymentStatusBadge status={order.paymentStatus} t={t} />
                         <p className="text-xs text-slate-500 mt-1 capitalize">
@@ -399,14 +399,14 @@ export function OrdersTab({ onNavigate, selectedOrderId, onClearSelection }: Adm
                         </p>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-slate-500 hidden md:table-cell">
                       {new Date(order.createdAt).toLocaleDateString(isRTL ? 'ar-AE' : 'en-AE')}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className={cn("flex items-center gap-2", isRTL ? "justify-start" : "justify-end")}>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      <div className={cn("flex items-center gap-1 sm:gap-2", isRTL ? "justify-start" : "justify-end")}>
                         <button
                           onClick={() => setSelectedOrder(order)}
-                          className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                          className="p-1.5 sm:p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
                           title={t.viewDetails}
                         >
                           <Eye className="w-4 h-4" />

@@ -95,9 +95,9 @@ function SettingsTab() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h4 className="font-semibold text-slate-900 mb-4">Store Information</h4>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <h4 className="font-semibold text-slate-900 mb-4 text-sm sm:text-base">Store Information</h4>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -132,8 +132,8 @@ function SettingsTab() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h4 className="font-semibold text-slate-900 mb-4">Order Settings</h4>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <h4 className="font-semibold text-slate-900 mb-4 text-sm sm:text-base">Order Settings</h4>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -169,8 +169,8 @@ function SettingsTab() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h4 className="font-semibold text-slate-900 mb-4">Notification Settings</h4>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <h4 className="font-semibold text-slate-900 mb-4 text-sm sm:text-base">Notification Settings</h4>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -202,8 +202,8 @@ function SettingsTab() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h4 className="font-semibold text-slate-900 mb-4">VAT Settings</h4>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <h4 className="font-semibold text-slate-900 mb-4 text-sm sm:text-base">VAT Settings</h4>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">

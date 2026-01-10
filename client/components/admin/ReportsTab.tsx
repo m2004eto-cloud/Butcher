@@ -193,18 +193,18 @@ export function ReportsTab({ onNavigate }: AdminTabProps) {
             {t.comprehensiveAnalytics}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={fetchData}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+            className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 text-xs sm:text-sm"
           >
             <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-            {t.refresh}
+            <span className="hidden sm:inline">{t.refresh}</span>
           </button>
           <div className="relative group">
-            <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+            <button className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 text-xs sm:text-sm">
               <Download className="w-4 h-4" />
-              {t.export}
+              <span className="hidden sm:inline">{t.export}</span>
             </button>
             <div className={cn(
               "absolute mt-2 w-40 bg-white rounded-lg shadow-lg border border-slate-200 hidden group-hover:block z-10",
@@ -234,13 +234,13 @@ export function ReportsTab({ onNavigate }: AdminTabProps) {
       </div>
 
       {/* Period Selector */}
-      <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm w-fit">
+      <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm overflow-x-auto max-w-full">
         {(Object.keys(periodLabels) as ReportPeriod[]).map((p) => (
           <button
             key={p}
             onClick={() => setPeriod(p)}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
               period === p
                 ? "bg-primary text-white"
                 : "text-slate-600 hover:bg-slate-100"
@@ -258,7 +258,7 @@ export function ReportsTab({ onNavigate }: AdminTabProps) {
       ) : (
         <>
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <SummaryCard
               icon={DollarSign}
               label={t.totalRevenue}
@@ -293,11 +293,11 @@ export function ReportsTab({ onNavigate }: AdminTabProps) {
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Top Products */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-slate-900">{t.topSellingProducts}</h4>
+                <h4 className="font-semibold text-slate-900 text-sm sm:text-base">{t.topSellingProducts}</h4>
                 <BarChart3 className="w-5 h-5 text-slate-400" />
               </div>
 
@@ -337,9 +337,9 @@ export function ReportsTab({ onNavigate }: AdminTabProps) {
             </div>
 
             {/* Sales by Category */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-slate-900">{t.salesByCategory}</h4>
+                <h4 className="font-semibold text-slate-900 text-sm sm:text-base">{t.salesByCategory}</h4>
                 <PieChart className="w-5 h-5 text-slate-400" />
               </div>
 
@@ -407,9 +407,9 @@ export function ReportsTab({ onNavigate }: AdminTabProps) {
           </div>
 
           {/* Daily Sales Chart Placeholder */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h4 className="font-semibold text-slate-900">{t.revenueTrend}</h4>
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
+              <h4 className="font-semibold text-slate-900 text-sm sm:text-base">{t.revenueTrend}</h4>
               <div className="flex items-center gap-2 text-sm text-slate-500">
                 <Calendar className="w-4 h-4" />
                 {periodLabels[period]}
@@ -575,22 +575,22 @@ function SummaryCard({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-slate-500">{label}</p>
-          <p className="text-2xl font-bold text-slate-900 mt-1">{value}</p>
+    <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs sm:text-sm text-slate-500 truncate">{label}</p>
+          <p className="text-base sm:text-2xl font-bold text-slate-900 mt-1 truncate">{value}</p>
         </div>
         <div
           className={cn(
-            "w-12 h-12 rounded-xl flex items-center justify-center",
+            "w-9 h-9 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0",
             colorClasses[color].bg
           )}
         >
-          <Icon className={cn("w-6 h-6", colorClasses[color].text)} />
+          <Icon className={cn("w-4 h-4 sm:w-6 sm:h-6", colorClasses[color].text)} />
         </div>
       </div>
-      <div className="mt-4">
+      <div className="mt-3 sm:mt-4">
         <ChangeIndicator value={change} showLabel labelText={vsPreviousPeriod} />
       </div>
     </div>

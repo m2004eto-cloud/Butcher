@@ -45,35 +45,35 @@ function StatCard({ title, value, change, changeText, icon: Icon, iconColor, ico
   return (
     <div 
       className={cn(
-        "bg-white rounded-xl shadow-sm p-6",
+        "bg-white rounded-xl shadow-sm p-4 sm:p-6",
         onClick && "cursor-pointer hover:shadow-md transition-shadow"
       )}
       onClick={onClick}
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-slate-500 text-sm">{title}</p>
-          <p className="text-2xl font-bold text-slate-900 mt-1">{value}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-slate-500 text-xs sm:text-sm truncate">{title}</p>
+          <p className="text-lg sm:text-2xl font-bold text-slate-900 mt-1 truncate">{value}</p>
           {change !== undefined && (
             <div className={cn(
-              "flex items-center gap-1 mt-2 text-sm font-medium",
+              "flex items-center gap-1 mt-2 text-xs sm:text-sm font-medium",
               change >= 0 ? "text-green-600" : "text-red-600"
             )}>
               {change >= 0 ? (
-                <TrendingUp className="w-4 h-4" />
+                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
               ) : (
-                <TrendingDown className="w-4 h-4" />
+                <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
               )}
-              {Math.abs(change)}% {changeText}
+              <span className="truncate">{Math.abs(change)}% {changeText}</span>
             </div>
           )}
         </div>
-        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", iconBg)}>
-          <Icon className={cn("w-6 h-6", iconColor)} />
+        <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0", iconBg)}>
+          <Icon className={cn("w-5 h-5 sm:w-6 sm:h-6", iconColor)} />
         </div>
       </div>
       {onClick && (
-        <div className={cn("mt-3 pt-3 border-t border-slate-100 flex items-center text-sm text-primary font-medium", isRTL ? "justify-start" : "justify-end")}>
+        <div className={cn("mt-3 pt-3 border-t border-slate-100 flex items-center text-xs sm:text-sm text-primary font-medium", isRTL ? "justify-start" : "justify-end")}>
           {viewDetailsText} {isRTL ? <ArrowLeft className="w-4 h-4 me-1" /> : <ArrowRight className="w-4 h-4 ms-1" />}
         </div>
       )}
@@ -190,7 +190,7 @@ export function DashboardTab({ onNavigate }: AdminTabProps) {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard
           title={t.todaysRevenue}
           value={
@@ -243,9 +243,9 @@ export function DashboardTab({ onNavigate }: AdminTabProps) {
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h4 className="font-semibold text-slate-900 mb-4">{t.weeklyPerformance}</h4>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <h4 className="font-semibold text-slate-900 mb-4 text-sm sm:text-base">{t.weeklyPerformance}</h4>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-slate-500">{t.revenue}</span>
@@ -268,8 +268,8 @@ export function DashboardTab({ onNavigate }: AdminTabProps) {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h4 className="font-semibold text-slate-900 mb-4">{t.monthlyPerformance}</h4>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <h4 className="font-semibold text-slate-900 mb-4 text-sm sm:text-base">{t.monthlyPerformance}</h4>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-slate-500">{t.revenue}</span>
@@ -289,9 +289,9 @@ export function DashboardTab({ onNavigate }: AdminTabProps) {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold text-slate-900">{t.lowStockAlerts}</h4>
+            <h4 className="font-semibold text-slate-900 text-sm sm:text-base">{t.lowStockAlerts}</h4>
             {stats.lowStockCount > 0 && (
               <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full">
                 {stats.lowStockCount}
@@ -336,8 +336,8 @@ export function DashboardTab({ onNavigate }: AdminTabProps) {
 
       {/* Recent Orders */}
       <div className="bg-white rounded-xl shadow-sm">
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-          <h4 className="font-semibold text-slate-900">{t.recentOrders}</h4>
+        <div className="p-4 sm:p-6 border-b border-slate-200 flex items-center justify-between">
+          <h4 className="font-semibold text-slate-900 text-sm sm:text-base">{t.recentOrders}</h4>
           <button
             onClick={() => onNavigate?.("orders")}
             className="text-sm text-primary font-medium hover:underline flex items-center gap-1"
@@ -349,25 +349,25 @@ export function DashboardTab({ onNavigate }: AdminTabProps) {
           <table className="w-full">
             <thead className="bg-slate-50">
               <tr>
-                <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-right" : "text-left")}>
                   {t.order}
                 </th>
-                <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden sm:table-cell", isRTL ? "text-right" : "text-left")}>
                   {t.customer}
                 </th>
-                <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden md:table-cell", isRTL ? "text-right" : "text-left")}>
                   {t.items}
                 </th>
-                <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-right" : "text-left")}>
                   {t.total}
                 </th>
-                <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-right" : "text-left")}>
                   {t.status}
                 </th>
-                <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden lg:table-cell", isRTL ? "text-right" : "text-left")}>
                   {t.payment}
                 </th>
-                <th className={cn("px-6 py-3 text-xs font-semibold text-slate-500 uppercase", isRTL ? "text-left" : "text-right")}>
+                <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-left" : "text-right")}>
                   {t.action}
                 </th>
               </tr>
@@ -375,33 +375,33 @@ export function DashboardTab({ onNavigate }: AdminTabProps) {
             <tbody className="divide-y divide-slate-200">
               {stats.recentOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4">
                     <button 
                       onClick={() => onNavigate?.("orders")}
-                      className="font-mono text-sm font-medium text-blue-600 hover:underline"
+                      className="font-mono text-xs sm:text-sm font-medium text-blue-600 hover:underline"
                     >
                       {order.orderNumber}
                     </button>
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-700">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-slate-700 hidden sm:table-cell">
                     {order.customerName}
                   </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-slate-500 hidden md:table-cell">
                     {order.itemCount} {t.itemsCount}
                   </td>
-                  <td className="px-6 py-4 text-sm font-semibold text-slate-900">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-slate-900">
                     <span className="inline-flex items-center gap-1">
                       <CurrencySymbol size="sm" />
                       {formatCurrency(order.total)}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4">
                     <OrderStatusBadge status={order.status} isRTL={isRTL} />
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 sm:px-6 py-3 sm:py-4 hidden lg:table-cell">
                     <PaymentStatusBadge status={order.paymentStatus} isRTL={isRTL} />
                   </td>
-                  <td className={cn("px-6 py-4", isRTL ? "text-left" : "text-right")}>
+                  <td className={cn("px-3 sm:px-6 py-3 sm:py-4", isRTL ? "text-left" : "text-right")}>
                     <button
                       onClick={() => onNavigate?.("orders")}
                       className="p-2 text-slate-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"

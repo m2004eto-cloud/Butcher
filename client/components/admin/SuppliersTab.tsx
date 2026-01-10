@@ -582,7 +582,7 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <StatCard label={t.totalSuppliers} value={stats.totalSuppliers} icon={Building2} tone="slate" />
         <StatCard label={t.active} value={stats.activeSuppliers} icon={BadgeCheck} tone="green" />
         <StatCard label={t.pending} value={stats.pendingSuppliers} icon={AlertCircle} tone="amber" />
@@ -649,53 +649,53 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-slate-600">
               <tr>
-                <th className={cn("px-4 py-3", isRTL ? "text-right" : "text-left")}>{t.supplier}</th>
-                <th className={cn("px-4 py-3", isRTL ? "text-right" : "text-left")}>{t.contacts}</th>
-                <th className={cn("px-4 py-3", isRTL ? "text-right" : "text-left")}>{t.terms}</th>
-                <th className={cn("px-4 py-3", isRTL ? "text-right" : "text-left")}>{t.spend}</th>
-                <th className={cn("px-4 py-3", isRTL ? "text-right" : "text-left")}>{t.performance}</th>
-                <th className={cn("px-4 py-3", isRTL ? "text-right" : "text-left")}>{t.status}</th>
-                <th className={cn("px-4 py-3", isRTL ? "text-left" : "text-right")}>{t.actions}</th>
+                <th className={cn("px-3 sm:px-4 py-3 text-xs sm:text-sm", isRTL ? "text-right" : "text-left")}>{t.supplier}</th>
+                <th className={cn("px-3 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell", isRTL ? "text-right" : "text-left")}>{t.contacts}</th>
+                <th className={cn("px-3 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell", isRTL ? "text-right" : "text-left")}>{t.terms}</th>
+                <th className={cn("px-3 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell", isRTL ? "text-right" : "text-left")}>{t.spend}</th>
+                <th className={cn("px-3 sm:px-4 py-3 text-xs sm:text-sm hidden xl:table-cell", isRTL ? "text-right" : "text-left")}>{t.performance}</th>
+                <th className={cn("px-3 sm:px-4 py-3 text-xs sm:text-sm", isRTL ? "text-right" : "text-left")}>{t.status}</th>
+                <th className={cn("px-3 sm:px-4 py-3 text-xs sm:text-sm", isRTL ? "text-left" : "text-right")}>{t.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredSuppliers.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3">
-                    <div className="font-semibold text-slate-900">{s.name}</div>
-                    <div className="text-xs text-slate-500">{s.code} · {s.email}</div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <MapPin className="w-3 h-3" /> {s.address.city}, {s.address.country}
+                  <td className="px-3 sm:px-4 py-3">
+                    <div className="font-semibold text-slate-900 text-sm">{s.name}</div>
+                    <div className="text-xs text-slate-500 truncate max-w-[150px] sm:max-w-none">{s.code} · {s.email}</div>
+                    <div className="flex items-center gap-1 text-xs text-slate-500">
+                      <MapPin className="w-3 h-3 flex-shrink-0" /> <span className="truncate">{s.address.city}, {s.address.country}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-3 sm:px-4 py-3 text-slate-600 hidden md:table-cell">
                     {s.contacts[0]?.name || "-"}
                     <div className="text-xs text-slate-500">{s.phone}</div>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-3 sm:px-4 py-3 text-slate-600 hidden lg:table-cell">
                     <div className="flex items-center gap-2">
                       <CreditCard className="w-4 h-4 text-slate-400" />
                       {paymentLabelsTranslated[s.paymentTerms]}
                     </div>
                     <div className="text-xs text-slate-500">{t.limit} {formatCurrency(s.creditLimit)}</div>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-3 sm:px-4 py-3 text-slate-600 hidden lg:table-cell">
                     <div className="font-semibold">{formatCurrency(s.totalSpent)}</div>
                     <div className="text-xs text-slate-500">{t.orders} {s.totalOrders}</div>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-3 sm:px-4 py-3 text-slate-600 hidden xl:table-cell">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 text-amber-500" /> {s.rating.toFixed(1)}
                     </div>
                     <div className="text-xs text-slate-500">{t.otd} {s.onTimeDeliveryRate}% · {t.quality} {s.qualityScore}%</div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 sm:px-4 py-3">
                     <span className={cn("px-2 py-1 rounded-full text-xs font-medium", statusColors[s.status])}>{s.status}</span>
                   </td>
-                  <td className={cn("px-4 py-3", isRTL ? "text-left" : "text-right")}>
+                  <td className={cn("px-3 sm:px-4 py-3", isRTL ? "text-left" : "text-right")}>
                     <button
                       onClick={() => handleSelect(s)}
-                      className="text-primary font-semibold hover:underline"
+                      className="text-primary font-semibold hover:underline text-sm"
                     >
                       {t.view}
                     </button>
@@ -713,7 +713,7 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
       </div>
 
       {selected && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
@@ -945,13 +945,13 @@ function StatCard({ label, value, icon: Icon, tone }: { label: string; value: st
     blue: { bg: "bg-blue-50", text: "text-blue-700" },
   } as const;
   return (
-    <div className={cn("rounded-xl border border-slate-200 p-4 shadow-sm flex items-center gap-3", colors[tone].bg)}>
-      <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center">
-        <Icon className={cn("w-5 h-5", colors[tone].text)} />
+    <div className={cn("rounded-xl border border-slate-200 p-3 sm:p-4 shadow-sm flex items-center gap-2 sm:gap-3", colors[tone].bg)}>
+      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center flex-shrink-0">
+        <Icon className={cn("w-4 h-4 sm:w-5 sm:h-5", colors[tone].text)} />
       </div>
-      <div>
-        <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-        <div className="text-lg font-semibold text-slate-900">{value}</div>
+      <div className="min-w-0">
+        <div className="text-[10px] sm:text-xs uppercase tracking-wide text-slate-500 truncate">{label}</div>
+        <div className="text-sm sm:text-lg font-semibold text-slate-900 truncate">{value}</div>
       </div>
     </div>
   );

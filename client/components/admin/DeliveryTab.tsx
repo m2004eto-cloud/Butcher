@@ -325,23 +325,23 @@ function DeliveriesList({
       {deliveries.map((order) => (
         <div
           key={order.id}
-          className="flex items-center justify-between p-4 bg-slate-50 rounded-lg"
+          className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-slate-50 rounded-lg gap-3"
         >
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Truck className="w-6 h-6 text-blue-600" />
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
-            <div>
-              <p className="font-medium text-slate-900">{order.orderNumber}</p>
-              <p className="text-sm text-slate-500">{order.customerName}</p>
-              <p className="text-xs text-slate-400">
+            <div className="min-w-0">
+              <p className="font-medium text-slate-900 text-sm sm:text-base">{order.orderNumber}</p>
+              <p className="text-xs sm:text-sm text-slate-500 truncate">{order.customerName}</p>
+              <p className="text-xs text-slate-400 truncate">
                 {order.deliveryAddress.area}, {order.deliveryAddress.emirate}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className={cn(isRTL ? "text-left" : "text-right")}>
-              <p className={cn("text-sm font-medium text-slate-900 flex items-center gap-1", isRTL ? "justify-start" : "justify-end")}>
+          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
+            <div className={cn(isRTL ? "text-left" : "text-right sm:text-right", "text-left")}>
+              <p className={cn("text-sm font-medium text-slate-900 flex items-center gap-1", isRTL ? "justify-start" : "justify-start sm:justify-end")}>
                 <CurrencySymbol size="sm" /> {order.total.toFixed(2)}
               </p>
               <p className="text-xs text-slate-500">
@@ -350,10 +350,11 @@ function DeliveriesList({
             </div>
             <button
               onClick={() => onAssign(order)}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary/90"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-primary text-white rounded-lg text-xs sm:text-sm hover:bg-primary/90 flex-shrink-0"
             >
-              <User className="w-4 h-4" />
-              {t.assignDriver}
+              <User className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">{t.assignDriver}</span>
+              <span className="sm:hidden">Assign</span>
             </button>
           </div>
         </div>
@@ -395,25 +396,25 @@ function ZonesList({
           <p className="text-slate-500">{t.noDeliveryZones}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {zones.map((zone) => (
             <div
               key={zone.id}
               className={cn(
-                "p-4 rounded-lg border-2",
+                "p-3 sm:p-4 rounded-lg border-2",
                 zone.isActive
                   ? "bg-white border-slate-200"
                   : "bg-slate-50 border-slate-100 opacity-60"
               )}
             >
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h4 className="font-medium text-slate-900">{isRTL ? zone.nameAr || zone.name : zone.name}</h4>
-                  <p className="text-sm text-slate-500">{isRTL ? zone.name : zone.nameAr}</p>
+              <div className="flex items-start justify-between mb-2 sm:mb-3">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-medium text-slate-900 text-sm sm:text-base truncate">{isRTL ? zone.nameAr || zone.name : zone.name}</h4>
+                  <p className="text-xs sm:text-sm text-slate-500 truncate">{isRTL ? zone.name : zone.nameAr}</p>
                 </div>
                 <span
                   className={cn(
-                    "px-2 py-0.5 rounded-full text-xs font-medium",
+                    "px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0",
                     zone.isActive
                       ? "bg-green-100 text-green-700"
                       : "bg-slate-200 text-slate-500"
@@ -532,8 +533,8 @@ function ZoneFormModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 {t.zoneNameEnglish} *
@@ -543,7 +544,7 @@ function ZoneFormModal({
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                className="w-full px-3 sm:px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm sm:text-base"
               />
             </div>
             <div>
@@ -555,7 +556,7 @@ function ZoneFormModal({
                 value={formData.nameAr}
                 onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                 dir="rtl"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                className="w-full px-3 sm:px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm sm:text-base"
               />
             </div>
           </div>
@@ -590,7 +591,7 @@ function ZoneFormModal({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 {t.deliveryFee}
@@ -606,7 +607,7 @@ function ZoneFormModal({
                   min="0"
                   step="0.01"
                   className={cn(
-                    "w-full py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none",
+                    "w-full py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm sm:text-base",
                     isRTL ? "pr-10 pl-4" : "pl-10 pr-4"
                   )}
                 />
@@ -627,7 +628,7 @@ function ZoneFormModal({
                   min="0"
                   step="0.01"
                   className={cn(
-                    "w-full py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none",
+                    "w-full py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm sm:text-base",
                     isRTL ? "pr-10 pl-4" : "pl-10 pr-4"
                   )}
                 />
@@ -642,7 +643,7 @@ function ZoneFormModal({
                 value={formData.estimatedMinutes}
                 onChange={(e) => setFormData({ ...formData, estimatedMinutes: e.target.value })}
                 min="1"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                className="w-full px-3 sm:px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm sm:text-base"
               />
             </div>
           </div>

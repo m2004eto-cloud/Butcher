@@ -210,7 +210,7 @@ export function ProductsTab({ onNavigate }: AdminTabProps) {
                 <tr>
                   <th
                     className={cn(
-                      "px-4 py-3 text-xs font-semibold text-slate-500 uppercase",
+                      "px-3 sm:px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden sm:table-cell",
                       isRTL ? "text-right" : "text-left"
                     )}
                   >
@@ -218,24 +218,24 @@ export function ProductsTab({ onNavigate }: AdminTabProps) {
                   </th>
                   <th
                     className={cn(
-                      "px-4 py-3 text-xs font-semibold text-slate-500 uppercase",
+                      "px-3 sm:px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap",
                       isRTL ? "text-right" : "text-left"
                     )}
                   >
                     {t.productName}
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
+                  <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden md:table-cell">
                     {t.category}
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
+                  <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase whitespace-nowrap">
                     {t.price}
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase">
+                  <th className="px-3 sm:px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden sm:table-cell">
                     {t.status}
                   </th>
                   <th
                     className={cn(
-                      "px-4 py-3 text-xs font-semibold text-slate-500 uppercase",
+                      "px-3 sm:px-4 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap",
                       isRTL ? "text-left" : "text-right"
                     )}
                   >
@@ -247,8 +247,8 @@ export function ProductsTab({ onNavigate }: AdminTabProps) {
                 {filteredProducts.map((product) => (
                   <tr key={product.id} className="hover:bg-slate-50">
                     {/* Image */}
-                    <td className="px-4 py-3">
-                      <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden">
+                    <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 rounded-lg overflow-hidden">
                         {product.image ? (
                           <img
                             src={product.image}
@@ -260,55 +260,57 @@ export function ProductsTab({ onNavigate }: AdminTabProps) {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <Package className="w-6 h-6 text-slate-300" />
+                            <Package className="w-5 h-5 sm:w-6 sm:h-6 text-slate-300" />
                           </div>
                         )}
                       </div>
                     </td>
                     {/* Name */}
-                    <td className="px-4 py-3">
-                      <div>
-                        <p className="font-medium text-slate-900">
+                    <td className="px-3 sm:px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="font-medium text-slate-900 text-sm truncate">
                           {isRTL && product.nameAr ? product.nameAr : product.name}
                         </p>
                         {isRTL && product.name && (
-                          <p className="text-xs text-slate-500">{product.name}</p>
+                          <p className="text-xs text-slate-500 truncate hidden sm:block">{product.name}</p>
                         )}
                         {!isRTL && product.nameAr && (
-                          <p className="text-xs text-slate-500">{product.nameAr}</p>
+                          <p className="text-xs text-slate-500 truncate hidden sm:block">{product.nameAr}</p>
                         )}
+                        {/* Show category on mobile under name */}
+                        <p className="text-xs text-slate-500 md:hidden">{product.category}</p>
                       </div>
                     </td>
                     {/* Category */}
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 sm:px-4 py-3 text-center hidden md:table-cell">
                       <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
                         {product.category}
                       </span>
                     </td>
                     {/* Price */}
-                    <td className="px-4 py-3 text-center font-semibold text-slate-900">
+                    <td className="px-3 sm:px-4 py-3 text-center font-semibold text-slate-900 text-xs sm:text-sm">
                       {product.price.toFixed(2)} <span className="text-xs text-slate-500">AED</span>
                     </td>
                     {/* Status */}
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-3 sm:px-4 py-3 text-center hidden sm:table-cell">
                       {product.available ? (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                           <Eye className="w-3 h-3" />
-                          {t.available}
+                          <span className="hidden lg:inline">{t.available}</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
                           <EyeOff className="w-3 h-3" />
-                          {t.unavailable}
+                          <span className="hidden lg:inline">{t.unavailable}</span>
                         </span>
                       )}
                     </td>
                     {/* Actions */}
-                    <td className="px-4 py-3">
-                      <div className={cn("flex items-center gap-2", isRTL ? "justify-start" : "justify-end")}>
+                    <td className="px-3 sm:px-4 py-3">
+                      <div className={cn("flex items-center gap-1 sm:gap-2", isRTL ? "justify-start" : "justify-end")}>
                         <button
                           onClick={() => setEditModal(product)}
-                          className="p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
+                          className="p-1.5 sm:p-2 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors"
                           title={t.edit}
                         >
                           <Edit className="w-4 h-4" />
@@ -316,7 +318,7 @@ export function ProductsTab({ onNavigate }: AdminTabProps) {
                         <button
                           onClick={() => handleToggleAvailability(product)}
                           className={cn(
-                            "p-2 rounded-lg transition-colors",
+                            "p-1.5 sm:p-2 rounded-lg transition-colors",
                             product.available
                               ? "text-green-600 hover:bg-green-50"
                               : "text-red-600 hover:bg-red-50"
@@ -327,7 +329,7 @@ export function ProductsTab({ onNavigate }: AdminTabProps) {
                         </button>
                         <button
                           onClick={() => setDeleteModal(product)}
-                          className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1.5 sm:p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title={t.delete}
                         >
                           <Trash2 className="w-4 h-4" />
