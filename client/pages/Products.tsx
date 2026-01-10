@@ -15,7 +15,7 @@ export default function ProductsPage() {
   const { products, refreshProducts } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
-  // Auto-refresh products when page becomes visible (user returns to tab)
+  // Auto-refresh products when page becomes visible or gains focus
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -23,14 +23,20 @@ export default function ProductsPage() {
       }
     };
 
+    const handleFocus = () => {
+      refreshProducts();
+    };
+
     // Refresh on mount
     refreshProducts();
 
-    // Listen for visibility changes
+    // Listen for visibility changes and window focus
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, [refreshProducts]);
 

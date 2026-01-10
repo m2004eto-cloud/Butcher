@@ -117,13 +117,50 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch products from backend on mount
+  // Sync products across browser tabs using storage event
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "butcher_products" && e.newValue) {
+        try {
+          const newProducts = JSON.parse(e.newValue);
+          setProducts(newProducts);
+        } catch {
+          // Ignore parse errors
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Save to localStorage whenever products change
+  useEffect(() => {
+    localStorage.setItem("butcher_products", JSON.stringify(products));
+  }, [products]);
+
+  // Fetch products from localStorage (source of truth for this demo)
+  // In production, this would fetch from the API
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Try to fetch from API first
       const response = await productsApi.getAll();
-      if (response.success && response.data) {
+      if (response.success && response.data && response.data.length > 0) {
+        // Check if we have local updates that are newer
+        const savedStr = localStorage.getItem("butcher_products");
+        if (savedStr) {
+          const savedProducts: Product[] = JSON.parse(savedStr);
+          // Use localStorage as source of truth since admin updates go there
+          // Only use API data if localStorage is empty
+          if (savedProducts.length > 0) {
+            setProducts(savedProducts);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
         // Map backend products to frontend format
         const mappedProducts: Product[] = response.data.map((p) => ({
           id: p.id,
@@ -138,24 +175,47 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
         }));
         setProducts(mappedProducts);
         localStorage.setItem("butcher_products", JSON.stringify(mappedProducts));
+      } else {
+        // API failed or returned empty, use localStorage
+        const saved = localStorage.getItem("butcher_products");
+        if (saved) {
+          setProducts(JSON.parse(saved));
+        }
       }
     } catch (err) {
       setError("Failed to fetch products");
-      // Keep using cached products if API fails
+      // Use localStorage as fallback
+      const saved = localStorage.getItem("butcher_products");
+      if (saved) {
+        setProducts(JSON.parse(saved));
+      }
     }
     setIsLoading(false);
   }, []);
 
+  // Only fetch on initial mount, not on every render
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    // Don't fetch if we already have products from localStorage
+    const saved = localStorage.getItem("butcher_products");
+    if (!saved) {
+      fetchProducts();
+    }
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem("butcher_products", JSON.stringify(products));
-  }, [products]);
-
+  // refreshProducts now reads from localStorage (synced across tabs)
   const refreshProducts = useCallback(async () => {
-    await fetchProducts();
+    const saved = localStorage.getItem("butcher_products");
+    if (saved) {
+      try {
+        const parsedProducts = JSON.parse(saved);
+        setProducts(parsedProducts);
+      } catch {
+        // If parse fails, fetch from API
+        await fetchProducts();
+      }
+    } else {
+      await fetchProducts();
+    }
   }, [fetchProducts]);
 
   const addProduct = async (product: Omit<Product, "id">) => {
