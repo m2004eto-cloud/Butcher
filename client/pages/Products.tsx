@@ -40,20 +40,25 @@ export default function ProductsPage() {
     };
   }, [refreshProducts]);
 
-  // Filter only available products for customers
-  const availableProducts = products.filter(p => p.available);
+  // Show all products (available ones first, then unavailable ones)
+  const sortedProducts = [...products].sort((a, b) => {
+    // Available products first, unavailable products last
+    if (a.available && !b.available) return -1;
+    if (!a.available && b.available) return 1;
+    return 0;
+  });
 
   // Define categories in the desired order
   const categoryOrder = ["All", "Beef", "Lamb", "Sheep", "Chicken"];
-  const productCategories = new Set(availableProducts.map((p) => p.category));
+  const productCategories = new Set(sortedProducts.map((p) => p.category));
   const categories = categoryOrder.filter(
     (cat) => cat === "All" || productCategories.has(cat)
   );
 
   const filteredProducts =
     selectedCategory === "All"
-      ? availableProducts
-      : availableProducts.filter((p) => p.category === selectedCategory);
+      ? sortedProducts
+      : sortedProducts.filter((p) => p.category === selectedCategory);
 
   // Determine if user is a visitor or not logged in at all
   const isVisitor = !!user && user.isVisitor;
