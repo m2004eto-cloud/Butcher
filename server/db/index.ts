@@ -269,7 +269,7 @@ export function seedDatabase() {
   const customers = [
     {
       id: "user_1",
-      username: "ahmed",
+      username: "Mohamed",
       email: "ahmed@example.com",
       mobile: "+971501111111",
       password: "password123",
