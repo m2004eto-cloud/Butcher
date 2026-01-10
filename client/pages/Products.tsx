@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProductCard } from "@/components/ProductCard";
 import { useAuth } from "@/context/AuthContext";
@@ -12,20 +12,42 @@ export default function ProductsPage() {
   const { addItem } = useBasket();
   const { t, language } = useLanguage();
   const isRTL = language === 'ar';
-  const { products } = useProducts();
+  const { products, refreshProducts } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+
+  // Auto-refresh products when page becomes visible (user returns to tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshProducts();
+      }
+    };
+
+    // Refresh on mount
+    refreshProducts();
+
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [refreshProducts]);
+
+  // Filter only available products for customers
+  const availableProducts = products.filter(p => p.available);
 
   // Define categories in the desired order
   const categoryOrder = ["All", "Beef", "Lamb", "Sheep", "Chicken"];
-  const productCategories = new Set(products.map((p) => p.category));
+  const productCategories = new Set(availableProducts.map((p) => p.category));
   const categories = categoryOrder.filter(
     (cat) => cat === "All" || productCategories.has(cat)
   );
 
   const filteredProducts =
     selectedCategory === "All"
-      ? products
-      : products.filter((p) => p.category === selectedCategory);
+      ? availableProducts
+      : availableProducts.filter((p) => p.category === selectedCategory);
 
   // Determine if user is a visitor or not logged in at all
   const isVisitor = !!user && user.isVisitor;

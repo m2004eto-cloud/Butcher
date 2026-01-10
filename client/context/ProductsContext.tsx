@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import { productsApi } from "@/lib/api";
 
 export interface Product {
@@ -118,7 +118,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [error, setError] = useState<string | null>(null);
 
   // Fetch products from backend on mount
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -144,19 +144,19 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
       // Keep using cached products if API fails
     }
     setIsLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   useEffect(() => {
     localStorage.setItem("butcher_products", JSON.stringify(products));
   }, [products]);
 
-  const refreshProducts = async () => {
+  const refreshProducts = useCallback(async () => {
     await fetchProducts();
-  };
+  }, [fetchProducts]);
 
   const addProduct = async (product: Omit<Product, "id">) => {
     try {
