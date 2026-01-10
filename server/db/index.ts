@@ -244,6 +244,7 @@ export function seedDatabase() {
   // Seed admin user
   db.users.set("admin_1", {
     id: "admin_1",
+    username: "admin",
     email: "admin@butcher.ae",
     mobile: "+971501234567",
     password: "admin123",
@@ -268,6 +269,7 @@ export function seedDatabase() {
   const customers = [
     {
       id: "user_1",
+      username: "ahmed",
       email: "ahmed@example.com",
       mobile: "+971501111111",
       password: "password123",
@@ -280,6 +282,7 @@ export function seedDatabase() {
     },
     {
       id: "user_2",
+      username: "fatima",
       email: "fatima@example.com",
       mobile: "+971502222222",
       password: "password123",
@@ -292,6 +295,7 @@ export function seedDatabase() {
     },
     {
       id: "user_3",
+      username: "mohamed",
       email: "mohamed@example.com",
       mobile: "+971503333333",
       password: "password123",
@@ -322,6 +326,7 @@ export function seedDatabase() {
   // Seed delivery driver
   db.users.set("driver_1", {
     id: "driver_1",
+    username: "driver",
     email: "driver@butcher.ae",
     mobile: "+971504444444",
     password: "driver123",

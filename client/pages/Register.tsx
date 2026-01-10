@@ -84,6 +84,7 @@ export default function RegisterPage() {
   const { register } = useAuth();
 
   const [formData, setFormData] = useState({
+    username: "",
     firstName: "",
     familyName: "",
     email: "",
@@ -239,6 +240,12 @@ export default function RegisterPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
+    if (!formData.username || formData.username.length < 3) {
+      newErrors.username = "Username must be at least 3 characters";
+    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      newErrors.username = "Username can only contain letters, numbers, and underscores";
+    }
+
     if (!isValidName(formData.firstName)) {
       newErrors.firstName = "First name must be at least 2 characters";
     }
@@ -299,6 +306,7 @@ export default function RegisterPage() {
 
     // Call backend API for registration with address data
     const result = await register({
+      username: formData.username,
       firstName: formData.firstName,
       familyName: formData.familyName,
       email: formData.email,
@@ -339,6 +347,22 @@ export default function RegisterPage() {
     const { name, value } = e.target;
 
     if (name === "mobile" && !value.startsWith("+971")) {
+      return;
+    }
+
+    // Sanitize username input
+    if (name === "username") {
+      const sanitizedValue = value.replace(/[^a-zA-Z0-9_]/g, "");
+      setFormData((prev) => ({
+        ...prev,
+        [name]: sanitizedValue,
+      }));
+      if (errors[name]) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: undefined,
+        }));
+      }
       return;
     }
 
@@ -383,21 +407,31 @@ export default function RegisterPage() {
               <h3 className="text-lg font-semibold text-foreground mb-4">
                 Personal Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <FormField 
-                  label="First Name" 
-                  name="firstName"
-                  value={formData.firstName}
-                  error={errors.firstName}
+                  label="Username" 
+                  name="username"
+                  placeholder="Choose a unique username"
+                  value={formData.username}
+                  error={errors.username}
                   onChange={handleChange}
                 />
-                <FormField 
-                  label="Family Name" 
-                  name="familyName"
-                  value={formData.familyName}
-                  error={errors.familyName}
-                  onChange={handleChange}
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField 
+                    label="First Name" 
+                    name="firstName"
+                    value={formData.firstName}
+                    error={errors.firstName}
+                    onChange={handleChange}
+                  />
+                  <FormField 
+                    label="Family Name" 
+                    name="familyName"
+                    value={formData.familyName}
+                    error={errors.familyName}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
             </div>
 

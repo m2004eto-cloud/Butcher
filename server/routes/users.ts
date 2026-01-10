@@ -12,6 +12,7 @@ const router = Router();
 
 // Validation schemas
 const createUserSchema = z.object({
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/, "Username can only contain letters, numbers, and underscores"),
   email: z.string().email(),
   mobile: z.string().min(9),
   password: z.string().min(6),
@@ -40,7 +41,7 @@ const updateUserSchema = z.object({
 });
 
 const loginSchema = z.object({
-  mobile: z.string().min(9),
+  username: z.string().min(3),
   password: z.string().min(1),
 });
 
@@ -156,6 +157,18 @@ const createUser: RequestHandler = (req, res) => {
 
     const data = validation.data;
 
+    // Check if username already exists
+    const existingByUsername = Array.from(db.users.values()).find(
+      (u) => u.username?.toLowerCase() === data.username.toLowerCase()
+    );
+    if (existingByUsername) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: "Username already taken",
+      };
+      return res.status(400).json(response);
+    }
+
     // Check if email already exists
     const existingByEmail = Array.from(db.users.values()).find(
       (u) => u.email.toLowerCase() === data.email.toLowerCase()
@@ -183,6 +196,7 @@ const createUser: RequestHandler = (req, res) => {
 
     const user: User & { password: string } = {
       id: generateId("user"),
+      username: data.username,
       email: data.email,
       mobile: data.mobile,
       password: data.password, // In production, hash the password!
@@ -335,18 +349,17 @@ const login: RequestHandler = (req, res) => {
       return res.status(400).json(response);
     }
 
-    const { mobile, password } = validation.data;
-    const normalizedMobile = mobile.replace(/\s/g, "");
+    const { username, password } = validation.data;
 
-    // Find user by mobile
+    // Find user by username
     const user = Array.from(db.users.values()).find(
-      (u) => u.mobile.replace(/\s/g, "") === normalizedMobile
+      (u) => u.username?.toLowerCase() === username.toLowerCase()
     );
 
     if (!user) {
       const response: ApiResponse<null> = {
         success: false,
-        error: "No account found with this phone number",
+        error: "No account found with this username",
       };
       return res.status(401).json(response);
     }

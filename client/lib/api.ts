@@ -111,10 +111,10 @@ async function fetchApi<T>(
 // =====================================================
 
 export const authApi = {
-  login: (mobile: string, password: string) =>
+  login: (username: string, password: string) =>
     fetchApi<LoginResponse>("/users/login", {
       method: "POST",
-      body: JSON.stringify({ mobile, password }),
+      body: JSON.stringify({ username, password }),
     }),
 
   adminLogin: (email: string, password: string) =>
@@ -124,6 +124,7 @@ export const authApi = {
     }),
 
   register: (userData: {
+    username: string;
     email: string;
     mobile: string;
     password: string;

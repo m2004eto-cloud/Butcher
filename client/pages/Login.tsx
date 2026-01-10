@@ -3,30 +3,31 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { isValidUAEPhone, isStrongPassword } from "@/utils/validators";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus, User } from "lucide-react";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { loginWithCredentials, login } = useAuth();
   const { t, language } = useLanguage();
 
-  const [mobile, setMobile] = useState("+971 ");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ mobile?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ username?: string; password?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
 
   const validateForm = () => {
-    const newErrors: { mobile?: string; password?: string } = {};
+    const newErrors: { username?: string; password?: string } = {};
 
-    if (!isValidUAEPhone(mobile)) {
-      newErrors.mobile = "Please enter a valid UAE phone number (+971 XX XXX XXXX)";
+    if (!username || username.length < 3) {
+      newErrors.username = language === "ar" 
+        ? "يرجى إدخال اسم المستخدم (3 أحرف على الأقل)" 
+        : "Please enter a username (at least 3 characters)";
     }
 
     if (!password) {
-      newErrors.password = "Password is required";
+      newErrors.password = language === "ar" ? "كلمة المرور مطلوبة" : "Password is required";
     }
 
     setErrors(newErrors);
@@ -43,7 +44,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     // Call backend API for login
-    const result = await loginWithCredentials(mobile, password);
+    const result = await loginWithCredentials(username, password);
     
     if (result.success) {
       navigate("/products");
@@ -121,31 +122,30 @@ export default function LoginPage() {
           >
             <div>
               <label className="block text-sm font-semibold text-foreground mb-2">
-                {t("login.phone")}
+                {language === "ar" ? "اسم المستخدم" : "Username"}
               </label>
-              <input
-                type="tel"
-                value={mobile}
-                onChange={(e) => {
-                  let value = e.target.value;
-                  // Ensure it starts with +971
-                  if (!value.startsWith("+971")) {
-                    value = "+971";
-                  }
-                  setMobile(value);
-                  if (errors.mobile) {
-                    setErrors({ ...errors, mobile: undefined });
-                  }
-                }}
-                placeholder="+971 50 123 4567"
-                className={`w-full px-4 py-3 rounded-lg border-2 transition-colors ${
-                  errors.mobile
-                    ? "border-destructive bg-destructive/5"
-                    : "border-input bg-white focus:border-primary"
-                } text-foreground placeholder-muted-foreground focus:outline-none`}
-              />
-              {errors.mobile && (
-                <p className="text-destructive text-sm mt-1">{errors.mobile}</p>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^a-zA-Z0-9_]/g, "");
+                    setUsername(value);
+                    if (errors.username) {
+                      setErrors({ ...errors, username: undefined });
+                    }
+                  }}
+                  placeholder={language === "ar" ? "أدخل اسم المستخدم" : "Enter your username"}
+                  className={`w-full pl-10 pr-4 py-3 rounded-lg border-2 transition-colors ${
+                    errors.username
+                      ? "border-destructive bg-destructive/5"
+                      : "border-input bg-white focus:border-primary"
+                  } text-foreground placeholder-muted-foreground focus:outline-none`}
+                />
+              </div>
+              {errors.username && (
+                <p className="text-destructive text-sm mt-1">{errors.username}</p>
               )}
             </div>
 

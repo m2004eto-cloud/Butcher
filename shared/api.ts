@@ -36,6 +36,7 @@ export type UserRole = "customer" | "admin" | "staff" | "delivery";
 
 export interface User {
   id: string;
+  username: string;
   email: string;
   mobile: string;
   firstName: string;
@@ -60,6 +61,7 @@ export interface UserPreferences {
 }
 
 export interface CreateUserRequest {
+  username: string;
   email: string;
   mobile: string;
   password: string;
@@ -81,7 +83,7 @@ export interface UpdateUserRequest {
 }
 
 export interface LoginRequest {
-  mobile: string;
+  username: string;
   password: string;
 }
 

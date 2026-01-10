@@ -3,6 +3,7 @@ import { authApi, setAuthToken, getAuthToken } from "@/lib/api";
 
 export interface User {
   id: string;
+  username: string;
   firstName: string;
   familyName: string;
   email: string;
@@ -31,10 +32,10 @@ interface AuthContextType {
   isAdmin: boolean;
   isLoading: boolean;
   login: (user: User) => void;
-  loginWithCredentials: (mobile: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithCredentials: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   loginAdmin: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  register: (user: Omit<User, "id"> & { password: string; deliveryAddress?: {
+  register: (user: Omit<User, "id"> & { username: string; password: string; deliveryAddress?: {
     label: string;
     fullName: string;
     mobile: string;
@@ -76,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           if (response.success && response.data) {
             const userData: User = {
               id: response.data.id,
+              username: response.data.username,
               firstName: response.data.firstName,
               familyName: response.data.familyName,
               email: response.data.email,
@@ -131,9 +133,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.setItem("user", JSON.stringify(newUser));
   };
 
-  const loginWithCredentials = async (mobile: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const loginWithCredentials = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await authApi.login(mobile, password);
+      const response = await authApi.login(username, password);
 
       if (response.success && response.data) {
         // Set auth token
@@ -142,6 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // Create user object
         const userData: User = {
           id: response.data.user.id,
+          username: response.data.user.username,
           firstName: response.data.user.firstName,
           familyName: response.data.user.familyName,
           email: response.data.user.email,
@@ -174,6 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // Create admin user object
         const adminUser: User = {
           id: response.data.user.id,
+          username: response.data.user.username || response.data.user.email,
           firstName: response.data.user.firstName,
           familyName: response.data.user.familyName,
           email: response.data.user.email,
@@ -206,7 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     localStorage.removeItem("basket");
   };
 
-  const register = async (newUser: Omit<User, "id"> & { password: string; deliveryAddress?: {
+  const register = async (newUser: Omit<User, "id"> & { username: string; password: string; deliveryAddress?: {
     label: string;
     fullName: string;
     mobile: string;
@@ -222,6 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   } }): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await authApi.register({
+        username: newUser.username,
         email: newUser.email,
         mobile: newUser.mobile,
         password: newUser.password,
@@ -234,7 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (response.success && response.data) {
         // Auto-login after registration
-        const loginResult = await loginWithCredentials(newUser.mobile, newUser.password);
+        const loginResult = await loginWithCredentials(newUser.username, newUser.password);
         return loginResult;
       }
 
