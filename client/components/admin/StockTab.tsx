@@ -14,14 +14,11 @@ import {
   History,
   Settings,
   X,
-  ImagePlus,
-  Upload,
 } from "lucide-react";
 import { stockApi } from "@/lib/api";
 import type { StockItem, StockMovement, LowStockAlert } from "@shared/api";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
-import { useProducts } from "@/context/ProductsContext";
 
 /**
  * Format weight - always display in kg
@@ -47,7 +44,6 @@ interface AdminTabProps {
 export function StockTab({ onNavigate }: AdminTabProps) {
   const { language } = useLanguage();
   const isRTL = language === 'ar';
-  const { addProduct } = useProducts();
   
   // Translations
   const t = {
@@ -95,27 +91,6 @@ export function StockTab({ onNavigate }: AdminTabProps) {
     reorderQuantityHint: isRTL ? 'الكمية المقترحة للطلب (بالجرام)' : 'Suggested quantity to order (in grams)',
     saving: isRTL ? 'جاري الحفظ...' : 'Saving...',
     saveSettings: isRTL ? 'حفظ الإعدادات' : 'Save Settings',
-    // Add Product translations
-    addNewProduct: isRTL ? 'إضافة منتج جديد' : 'Add New Product',
-    productName: isRTL ? 'اسم المنتج (إنجليزي)' : 'Product Name (English)',
-    productNameAr: isRTL ? 'اسم المنتج (عربي)' : 'Product Name (Arabic)',
-    productPrice: isRTL ? 'السعر (درهم)' : 'Price (AED)',
-    productCategory: isRTL ? 'الفئة' : 'Category',
-    productDescription: isRTL ? 'الوصف (إنجليزي)' : 'Description (English)',
-    productDescriptionAr: isRTL ? 'الوصف (عربي)' : 'Description (Arabic)',
-    productImage: isRTL ? 'صورة المنتج' : 'Product Image',
-    productAvailable: isRTL ? 'متوفر للبيع' : 'Available for Sale',
-    selectCategory: isRTL ? 'اختر الفئة' : 'Select Category',
-    beef: isRTL ? 'لحم بقري' : 'Beef',
-    lamb: isRTL ? 'لحم ضأن' : 'Lamb',
-    sheep: isRTL ? 'لحم خروف' : 'Sheep',
-    chicken: isRTL ? 'دجاج' : 'Chicken',
-    other: isRTL ? 'أخرى' : 'Other',
-    creating: isRTL ? 'جاري الإنشاء...' : 'Creating...',
-    createProduct: isRTL ? 'إنشاء المنتج' : 'Create Product',
-    uploadImage: isRTL ? 'رفع صورة' : 'Upload Image',
-    orEnterUrl: isRTL ? 'أو أدخل رابط الصورة' : 'Or enter image URL',
-    imageUrl: isRTL ? 'رابط الصورة' : 'Image URL',
   };
 
   const [stock, setStock] = useState<StockItem[]>([]);
@@ -127,7 +102,6 @@ export function StockTab({ onNavigate }: AdminTabProps) {
   const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
   const [restockModal, setRestockModal] = useState<StockItem | null>(null);
   const [thresholdsModal, setThresholdsModal] = useState<StockItem | null>(null);
-  const [addProductModal, setAddProductModal] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -183,22 +157,13 @@ export function StockTab({ onNavigate }: AdminTabProps) {
             {stock.length} {t.products} • {alerts.length} {t.lowStockAlerts}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setAddProductModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t.addNewProduct}
-          </button>
-          <button
-            onClick={fetchData}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
-          >
-            <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-            {t.refresh}
-          </button>
-        </div>
+        <button
+          onClick={fetchData}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+        >
+          <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+          {t.refresh}
+        </button>
       </div>
 
       {/* Tabs */}
@@ -307,20 +272,6 @@ export function StockTab({ onNavigate }: AdminTabProps) {
           item={thresholdsModal}
           onClose={() => setThresholdsModal(null)}
           onSave={handleUpdateThresholds}
-          isRTL={isRTL}
-          t={t}
-        />
-      )}
-
-      {/* Add Product Modal */}
-      {addProductModal && (
-        <AddProductModal
-          onClose={() => setAddProductModal(false)}
-          onAdd={async (product) => {
-            await addProduct(product);
-            await fetchData();
-            setAddProductModal(false);
-          }}
           isRTL={isRTL}
           t={t}
         />
@@ -770,287 +721,6 @@ function ThresholdsModal({
               className="flex-1 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50"
             >
               {submitting ? t.saving : t.saveSettings}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-interface NewProductData {
-  name: string;
-  nameAr?: string;
-  price: number;
-  category: string;
-  description: string;
-  descriptionAr?: string;
-  image?: string;
-  available: boolean;
-}
-
-function AddProductModal({
-  onClose,
-  onAdd,
-  isRTL,
-  t,
-}: {
-  onClose: () => void;
-  onAdd: (product: NewProductData) => Promise<void>;
-  isRTL: boolean;
-  t: Record<string, string>;
-}) {
-  const [name, setName] = useState("");
-  const [nameAr, setNameAr] = useState("");
-  const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("");
-  const [description, setDescription] = useState("");
-  const [descriptionAr, setDescriptionAr] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [available, setAvailable] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
-  const categories = [
-    { value: "Beef", label: t.beef },
-    { value: "Lamb", label: t.lamb },
-    { value: "Sheep", label: t.sheep },
-    { value: "Chicken", label: t.chicken },
-    { value: "Other", label: t.other },
-  ];
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setImagePreview(result);
-        setImageUrl(result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleImageUrlChange = (url: string) => {
-    setImageUrl(url);
-    setImagePreview(url);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !price || !category || !description) return;
-
-    setSubmitting(true);
-    try {
-      await onAdd({
-        name,
-        nameAr: nameAr || undefined,
-        price: parseFloat(price),
-        category,
-        description,
-        descriptionAr: descriptionAr || undefined,
-        image: imageUrl || undefined,
-        available,
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div 
-        className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" 
-        dir={isRTL ? 'rtl' : 'ltr'}
-      >
-        <div className="p-6 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white z-10">
-          <h2 className="text-xl font-bold text-slate-900">{t.addNewProduct}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Image Upload Section */}
-          <div className="space-y-3">
-            <label className="block text-sm font-medium text-slate-700">
-              {t.productImage}
-            </label>
-            <div className="flex items-start gap-4">
-              {/* Image Preview */}
-              <div className="w-32 h-32 bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden">
-                {imagePreview ? (
-                  <img 
-                    src={imagePreview} 
-                    alt="Preview" 
-                    className="w-full h-full object-cover"
-                    onError={() => setImagePreview(null)}
-                  />
-                ) : (
-                  <ImagePlus className="w-8 h-8 text-slate-400" />
-                )}
-              </div>
-              <div className="flex-1 space-y-3">
-                {/* File Upload Button */}
-                <label className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer transition-colors w-fit">
-                  <Upload className="w-4 h-4" />
-                  <span className="text-sm font-medium">{t.uploadImage}</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-                {/* URL Input */}
-                <div>
-                  <p className="text-xs text-slate-500 mb-1">{t.orEnterUrl}</p>
-                  <input
-                    type="url"
-                    value={imageUrl}
-                    onChange={(e) => handleImageUrlChange(e.target.value)}
-                    placeholder={t.imageUrl}
-                    className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Name Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                {t.productName} *
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="Premium Beef Steak"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                {t.productNameAr}
-              </label>
-              <input
-                type="text"
-                value={nameAr}
-                onChange={(e) => setNameAr(e.target.value)}
-                placeholder="ستيك لحم بقري ممتاز"
-                dir="rtl"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              />
-            </div>
-          </div>
-
-          {/* Price and Category */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                {t.productPrice} *
-              </label>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                min="0.01"
-                step="0.01"
-                required
-                placeholder="99.99"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                {t.productCategory} *
-              </label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                required
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white"
-              >
-                <option value="">{t.selectCategory}</option>
-                {categories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Description Fields */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              {t.productDescription} *
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              rows={3}
-              placeholder="Premium quality beef steak, perfect for grilling..."
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              {t.productDescriptionAr}
-            </label>
-            <textarea
-              value={descriptionAr}
-              onChange={(e) => setDescriptionAr(e.target.value)}
-              rows={3}
-              placeholder="ستيك لحم بقري عالي الجودة، مثالي للشوي..."
-              dir="rtl"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none resize-none"
-            />
-          </div>
-
-          {/* Availability Toggle */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setAvailable(!available)}
-              className={cn(
-                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                available ? "bg-primary" : "bg-slate-300"
-              )}
-            >
-              <span
-                className={cn(
-                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                  available ? (isRTL ? "translate-x-1" : "translate-x-6") : (isRTL ? "translate-x-6" : "translate-x-1")
-                )}
-              />
-            </button>
-            <span className="text-sm font-medium text-slate-700">
-              {t.productAvailable}
-            </span>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 py-2.5 border border-slate-300 rounded-lg font-medium hover:bg-slate-50 transition-colors"
-            >
-              {t.cancel}
-            </button>
-            <button
-              type="submit"
-              disabled={submitting || !name || !price || !category || !description}
-              className="flex-1 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {submitting ? t.creating : t.createProduct}
             </button>
           </div>
         </form>

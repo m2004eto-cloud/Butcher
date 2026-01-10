@@ -142,6 +142,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Admin Tabs
     "admin.dashboard": "Dashboard",
     "admin.orders": "Orders",
+    "admin.products": "Products",
     "admin.inventory": "Inventory",
     "admin.suppliers": "Suppliers",
     "admin.users": "Users",
@@ -372,6 +373,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Admin Tabs
     "admin.dashboard": "لوحة التحكم",
     "admin.orders": "الطلبات",
+    "admin.products": "المنتجات",
     "admin.inventory": "المخزون",
     "admin.suppliers": "الموردون",
     "admin.users": "المستخدمون",

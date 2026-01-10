@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { AdminLayout, AdminTab } from "@/components/admin/AdminLayout";
 import { DashboardTab } from "@/components/admin/DashboardTab";
 import { OrdersTab } from "@/components/admin/OrdersTab";
+import { ProductsTab } from "@/components/admin/ProductsTab";
 import { StockTab } from "@/components/admin/StockTab";
 import { SuppliersTab } from "@/components/admin/SuppliersTab";
 import { UsersTab } from "@/components/admin/UsersTab";
@@ -51,6 +52,8 @@ export default function AdminDashboardPage() {
         return <DashboardTab onNavigate={handleTabNavigate} />;
       case "orders":
         return <OrdersTab onNavigate={handleTabNavigate} selectedOrderId={selectedOrderId} onClearSelection={() => setSelectedOrderId(null)} />;
+      case "products":
+        return <ProductsTab onNavigate={handleTabNavigate} />;
       case "stock":
         return <StockTab onNavigate={handleTabNavigate} />;
       case "suppliers":
