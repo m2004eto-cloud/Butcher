@@ -64,7 +64,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
           id: `txn_welcome_${Date.now()}`,
           type: "credit",
           amount: welcomeBonus,
-          description: "Welcome bonus! Start shopping with Al Jazira",
+          description: "Welcome bonus! Start shopping with Butcher",
           descriptionAr: "مكافأة ترحيبية! ابدأ التسوق مع الجزيرة",
           createdAt: new Date().toISOString(),
         };

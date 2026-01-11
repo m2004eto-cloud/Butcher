@@ -1,4 +1,4 @@
-// Service Worker for Al Jazira Butcher PWA
+// Service Worker for Butcher PWA
 const CACHE_NAME = 'aljazira-butcher-v1';
 const STATIC_CACHE = 'aljazira-static-v1';
 const DYNAMIC_CACHE = 'aljazira-dynamic-v1';
@@ -128,7 +128,7 @@ self.addEventListener('push', (event) => {
 
   const data = event.data.json();
   const options = {
-    body: data.body || 'New notification from Al Jazira Butcher',
+    body: data.body || 'New notification from Butcher',
     icon: '/icons/icon-192x192.png',
     badge: '/icons/icon-72x72.png',
     vibrate: [100, 50, 100],
@@ -143,7 +143,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Al Jazira Butcher', options)
+    self.registration.showNotification(data.title || 'Butcher', options)
   );
 });
 
