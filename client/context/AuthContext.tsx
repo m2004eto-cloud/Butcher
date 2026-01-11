@@ -238,6 +238,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       if (response.success && response.data) {
+        // Save the delivery address to localStorage for Profile/Checkout sync
+        if (newUser.deliveryAddress && response.data.id) {
+          const addressToSave = {
+            id: `addr_${Date.now()}`,
+            userId: response.data.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            ...newUser.deliveryAddress,
+          };
+          localStorage.setItem(`addresses_${response.data.id}`, JSON.stringify([addressToSave]));
+        }
+        
         // Auto-login after registration
         const loginResult = await loginWithCredentials(newUser.username, newUser.password);
         return loginResult;

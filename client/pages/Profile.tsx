@@ -272,6 +272,9 @@ export default function ProfilePage() {
     
     const newAddress = {
       id: `addr_${Date.now()}`,
+      userId: user?.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       ...addressForm,
     };
     
