@@ -200,7 +200,7 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
     email: isRTL ? "البريد الإلكتروني" : "Email",
     phone: isRTL ? "الهاتف" : "Phone",
     taxNumber: isRTL ? "الرقم الضريبي / TRN" : "Tax Number / TRN",
-    creditLimitAED: isRTL ? "حد الائتمان (درهم)" : "Credit Limit (AED)",
+    creditLimitAED: isRTL ? "حد الائتمان (د.إ)" : "Credit Limit (د.إ)",
     categoriesComma: isRTL ? "الفئات (مفصولة بفاصلة)" : "Categories (comma separated)",
     address: isRTL ? "العنوان" : "Address",
     street: isRTL ? "الشارع" : "Street",

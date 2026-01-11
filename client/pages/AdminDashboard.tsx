@@ -137,7 +137,7 @@ function SettingsTab() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Minimum Order Value (AED)
+                Minimum Order Value (د.إ)
               </label>
               <input
                 type="number"
@@ -147,7 +147,7 @@ function SettingsTab() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Default Delivery Fee (AED)
+                Default Delivery Fee (د.إ)
               </label>
               <input
                 type="number"

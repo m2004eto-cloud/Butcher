@@ -53,7 +53,7 @@ export default function WalletPage() {
       refund: "Refund",
       topUpLabel: "Top Up",
       cashback: "Cashback",
-      aed: "AED",
+      aed: "د.إ",
       earnCashback: "Earn 2% cashback on every order!",
     },
     ar: {
