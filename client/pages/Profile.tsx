@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   User, 
@@ -20,8 +20,25 @@ import {
   Star,
   Award,
   Copy,
-  Check
+  Check,
+  Navigation,
+  Loader2
 } from "lucide-react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Fix Leaflet default marker icon issue
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+// @ts-ignore
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { useWishlist } from "@/context/WishlistContext";
@@ -77,7 +94,13 @@ export default function ProfilePage() {
     floor: "",
     apartment: "",
     isDefault: true,
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
   });
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const leafletMapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
 
   // Load saved addresses from localStorage
   useEffect(() => {
@@ -92,6 +115,130 @@ export default function ProfilePage() {
       }
     }
   }, [user?.id]);
+
+  // Initialize map when form is shown and location is set
+  useEffect(() => {
+    if (!showAddressForm || !mapContainerRef.current) return;
+    if (leafletMapRef.current) return; // Already initialized
+
+    // Default to Dubai if no location set
+    const lat = addressForm.latitude || 25.2048;
+    const lng = addressForm.longitude || 55.2708;
+
+    leafletMapRef.current = L.map(mapContainerRef.current).setView([lat, lng], 15);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
+    }).addTo(leafletMapRef.current);
+
+    markerRef.current = L.marker([lat, lng], { draggable: true }).addTo(leafletMapRef.current);
+
+    // Handle marker drag
+    markerRef.current.on("dragend", async () => {
+      const pos = markerRef.current?.getLatLng();
+      if (pos) {
+        setAddressForm(prev => ({ ...prev, latitude: pos.lat, longitude: pos.lng }));
+        await reverseGeocodeAndFillAddress(pos.lat, pos.lng);
+      }
+    });
+
+    // Handle map click
+    leafletMapRef.current.on("click", async (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
+      if (markerRef.current) {
+        markerRef.current.setLatLng([lat, lng]);
+      }
+      setAddressForm(prev => ({ ...prev, latitude: lat, longitude: lng }));
+      await reverseGeocodeAndFillAddress(lat, lng);
+    });
+
+    return () => {
+      if (leafletMapRef.current) {
+        leafletMapRef.current.remove();
+        leafletMapRef.current = null;
+        markerRef.current = null;
+      }
+    };
+  }, [showAddressForm]);
+
+  // Update marker when location changes externally
+  useEffect(() => {
+    if (markerRef.current && addressForm.latitude && addressForm.longitude) {
+      markerRef.current.setLatLng([addressForm.latitude, addressForm.longitude]);
+      leafletMapRef.current?.setView([addressForm.latitude, addressForm.longitude], 15);
+    }
+  }, [addressForm.latitude, addressForm.longitude]);
+
+  // Reverse geocode to get address components
+  const reverseGeocodeAndFillAddress = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { headers: { "Accept-Language": "en" } }
+      );
+      const data = await response.json();
+      
+      if (data.address) {
+        const addr = data.address;
+        const area = addr.suburb || addr.neighbourhood || addr.district || addr.city_district || "";
+        const street = addr.road || addr.street || "";
+        const building = addr.house_number || "";
+        
+        let emirate = "";
+        const city = (addr.city || addr.town || addr.state || "").toLowerCase();
+        if (city.includes("dubai")) emirate = "Dubai";
+        else if (city.includes("abu dhabi")) emirate = "Abu Dhabi";
+        else if (city.includes("sharjah")) emirate = "Sharjah";
+        else if (city.includes("ajman")) emirate = "Ajman";
+        else if (city.includes("ras al")) emirate = "Ras Al Khaimah";
+        else if (city.includes("fujairah")) emirate = "Fujairah";
+        else if (city.includes("umm al")) emirate = "Umm Al Quwain";
+
+        setAddressForm(prev => ({
+          ...prev,
+          area: area || prev.area,
+          street: street || prev.street,
+          building: building || prev.building,
+          emirate: emirate || prev.emirate,
+        }));
+      }
+    } catch (error) {
+      console.error("Reverse geocoding failed:", error);
+    }
+  };
+
+  // Auto-detect user's current location
+  const detectCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert(isRTL ? "المتصفح لا يدعم تحديد الموقع" : "Geolocation is not supported by your browser");
+      return;
+    }
+
+    setIsDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setAddressForm(prev => ({ ...prev, latitude, longitude }));
+        setIsDetectingLocation(false);
+        
+        if (markerRef.current) {
+          markerRef.current.setLatLng([latitude, longitude]);
+        }
+        if (leafletMapRef.current) {
+          leafletMapRef.current.setView([latitude, longitude], 16);
+        }
+        
+        await reverseGeocodeAndFillAddress(latitude, longitude);
+      },
+      (error) => {
+        console.error("Location detection failed:", error);
+        setIsDetectingLocation(false);
+        alert(isRTL ? "فشل تحديد الموقع. يرجى المحاولة مرة أخرى" : "Failed to detect location. Please try again.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   // Save address handler
   const handleSaveAddress = () => {
@@ -227,6 +374,10 @@ export default function ProfilePage() {
       work: "Work",
       other: "Other",
       selectEmirate: "Select Emirate",
+      detectLocation: "Detect My Location",
+      detectingLocation: "Detecting...",
+      pinLocation: "Pin Your Location",
+      pinLocationHint: "Click on the map or drag the marker to set your exact location",
     },
     ar: {
       myAccount: "حسابي",
@@ -287,6 +438,10 @@ export default function ProfilePage() {
       work: "العمل",
       other: "آخر",
       selectEmirate: "اختر الإمارة",
+      detectLocation: "تحديد موقعي",
+      detectingLocation: "جاري التحديد...",
+      pinLocation: "حدد موقعك",
+      pinLocationHint: "انقر على الخريطة أو اسحب العلامة لتحديد موقعك الدقيق",
     },
   };
 
@@ -560,6 +715,37 @@ export default function ProfilePage() {
                           </button>
                         ))}
                       </div>
+                    </div>
+
+                    {/* Map Section */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-muted-foreground">{t.pinLocation}</label>
+                        <button
+                          type="button"
+                          onClick={detectCurrentLocation}
+                          disabled={isDetectingLocation}
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors disabled:opacity-50"
+                        >
+                          {isDetectingLocation ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              {t.detectingLocation}
+                            </>
+                          ) : (
+                            <>
+                              <Navigation className="w-4 h-4" />
+                              {t.detectLocation}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">{t.pinLocationHint}</p>
+                      <div 
+                        ref={mapContainerRef} 
+                        className="h-[250px] rounded-lg border border-border overflow-hidden"
+                        style={{ zIndex: 0 }}
+                      />
                     </div>
 
                     {/* Full Name & Mobile */}
