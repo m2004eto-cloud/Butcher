@@ -423,6 +423,15 @@ Total: AED ${order.total.toFixed(2)}
 
                       {/* Actions */}
                       <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+                        {["out_for_delivery", "processing"].includes(order.status) && (
+                          <Link
+                            to={`/track/${order.orderNumber}`}
+                            className="btn-primary flex items-center gap-2 text-sm"
+                          >
+                            <MapPin className="w-4 h-4" />
+                            {t.trackOrder}
+                          </Link>
+                        )}
                         <button
                           onClick={() => handleReorder(order)}
                           className="btn-primary flex items-center gap-2 text-sm"

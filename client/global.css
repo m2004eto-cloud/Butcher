@@ -122,7 +122,7 @@
   }
 
   input, textarea, select {
-    @apply rounded-md border border-input bg-white px-3 py-2 text-foreground placeholder-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+    @apply rounded-md border border-input bg-white dark:bg-gray-800 px-3 py-2 text-foreground placeholder-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
   }
 
   input:disabled, textarea:disabled, select:disabled {

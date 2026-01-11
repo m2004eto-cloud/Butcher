@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Bell, Package, Truck, CreditCard, CheckCircle, X, Trash2, FileText, MessageCircle, Send, Paperclip, Download, Image, File, Heart, User, ShoppingBag, ChevronDown, Sun, Moon } from "lucide-react";
+import { Bell, Package, Truck, CreditCard, CheckCircle, X, Trash2, FileText, MessageCircle, Send, Paperclip, Download, Image, File, Heart, User, ShoppingBag, ChevronDown, Sun, Moon, Home, Percent, Wallet } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useBasket } from "@/context/BasketContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -596,6 +596,14 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
                     {/* Menu Items */}
                     <div className="py-2">
                       <Link
+                        to="/home"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-gray-50 transition-colors"
+                      >
+                        <Home className="w-4 h-4 text-muted-foreground" />
+                        {language === "ar" ? "الرئيسية" : "Home"}
+                      </Link>
+                      <Link
                         to="/profile"
                         onClick={() => setShowUserMenu(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-gray-50 transition-colors"
@@ -610,6 +618,22 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
                       >
                         <ShoppingBag className="w-4 h-4 text-muted-foreground" />
                         {language === "ar" ? "طلباتي" : "My Orders"}
+                      </Link>
+                      <Link
+                        to="/wallet"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-gray-50 transition-colors"
+                      >
+                        <Wallet className="w-4 h-4 text-muted-foreground" />
+                        {language === "ar" ? "المحفظة" : "Wallet"}
+                      </Link>
+                      <Link
+                        to="/deals"
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-gray-50 transition-colors"
+                      >
+                        <Percent className="w-4 h-4 text-muted-foreground" />
+                        {language === "ar" ? "العروض" : "Deals & Offers"}
                       </Link>
                       <Link
                         to="/wishlist"

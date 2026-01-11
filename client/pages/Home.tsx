@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   ChevronRight, 
   ChevronLeft,
@@ -20,6 +20,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useProducts } from "@/context/ProductsContext";
 import { useOrders } from "@/context/OrdersContext";
 import { useAuth } from "@/context/AuthContext";
+import { useBasket, BasketItem } from "@/context/BasketContext";
 import { cn } from "@/lib/utils";
 import ProductCard from "@/components/ProductCard";
 
@@ -76,9 +77,21 @@ export default function HomePage() {
   const { products } = useProducts();
   const { orders } = useOrders();
   const { user } = useAuth();
+  const { addItem } = useBasket();
+  const navigate = useNavigate();
   const isRTL = language === "ar";
   
   const [currentBanner, setCurrentBanner] = useState(0);
+
+  // Handler for adding items to basket
+  const handleAddToBasket = (item: BasketItem) => {
+    addItem(item);
+  };
+
+  // Handler when login is required (for visitors)
+  const handleLoginRequired = () => {
+    navigate("/login");
+  };
 
   // Auto-rotate banners
   useEffect(() => {
@@ -355,7 +368,7 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {dealsProducts.map((product) => (
-                <ProductCard key={product.id} product={product} compact />
+                <ProductCard key={product.id} product={product} compact onAddToBasket={handleAddToBasket} />
               ))}
             </div>
           </section>
@@ -384,7 +397,7 @@ export default function HomePage() {
               {reorderItems.map((item) => {
                 const product = products.find((p) => p.id === item.id);
                 return product ? (
-                  <ProductCard key={item.id} product={product} />
+                  <ProductCard key={item.id} product={product} onAddToBasket={handleAddToBasket} />
                 ) : null;
               })}
             </div>
@@ -408,7 +421,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {bestSellers.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product} onAddToBasket={handleAddToBasket} />
             ))}
           </div>
         </section>
@@ -430,7 +443,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {newArrivals.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard key={product.id} product={product} onAddToBasket={handleAddToBasket} />
             ))}
           </div>
         </section>

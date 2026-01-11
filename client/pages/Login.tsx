@@ -47,7 +47,7 @@ export default function LoginPage() {
     const result = await loginWithCredentials(username, password);
     
     if (result.success) {
-      navigate("/products");
+      navigate("/home");
     } else {
       setErrors({ ...errors, password: result.error || "Login failed" });
     }
