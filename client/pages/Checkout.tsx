@@ -837,12 +837,15 @@ export default function CheckoutPage() {
       setError(language === "ar" ? "يرجى اختيار عنوان التوصيل" : "Please select or add a delivery address");
       return;
     }
-    if (!selectedTimeSlotId) {
+    // Skip time slot validation for express delivery
+    if (!isExpressDelivery && !selectedTimeSlotId) {
       setError(language === "ar" ? "يرجى اختيار موعد التوصيل المفضل" : "Please select a preferred delivery time slot");
       return;
     }
     setIsProcessing(true);
-    const deliverySlotInfo = getSelectedDeliverySlotInfo();
+    const deliverySlotInfo = isExpressDelivery 
+      ? (language === "ar" ? "توصيل سريع - خلال 3 ساعات" : "Express Delivery - Within 3 hours")
+      : getSelectedDeliverySlotInfo();
     navigate("/payment/card", { 
       state: { 
         addressId: selectedAddressId,
@@ -1015,7 +1018,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!selectedTimeSlotId) {
+    // Skip time slot validation for express delivery
+    if (!isExpressDelivery && !selectedTimeSlotId) {
       setError(language === "ar" ? "يرجى اختيار موعد التوصيل المفضل" : "Please select a preferred delivery time slot");
       return;
     }
@@ -1023,8 +1027,10 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     setError(null);
 
-    // Build delivery notes with time slot
-    const deliverySlotInfo = getSelectedDeliverySlotInfo();
+    // Build delivery notes with time slot or express delivery
+    const deliverySlotInfo = isExpressDelivery 
+      ? (language === "ar" ? "توصيل سريع - خلال 3 ساعات" : "Express Delivery - Within 3 hours")
+      : getSelectedDeliverySlotInfo();
     const deliveryNotes = `Preferred Delivery Time: ${deliverySlotInfo}`;
 
     try {
@@ -1304,7 +1310,8 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* Preferred Delivery Time Slot Section */}
+              {/* Preferred Delivery Time Slot Section - Hidden for Express Delivery */}
+              {!isExpressDelivery && (
               <div className="card-premium p-4 sm:p-6">
                 <h2 className="text-lg sm:text-2xl font-bold text-foreground mb-1 sm:mb-2">
                   {language === "ar" ? "وقت التوصيل المفضل" : "Preferred Delivery Time"}
@@ -1404,17 +1411,22 @@ export default function CheckoutPage() {
                     </p>
                   </div>
                 )}
+              </div>
+              )}
 
-                {/* Express Delivery Option */}
-                <div className="mt-4 sm:mt-6 pt-4 border-t border-border">
-                  <div
-                    onClick={() => setIsExpressDelivery(!isExpressDelivery)}
-                    className={`p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                      isExpressDelivery
-                        ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
-                        : "border-border hover:border-orange-300"
-                    }`}
-                  >
+              {/* Express Delivery Option - Always visible */}
+              <div className="card-premium p-4 sm:p-6">
+                <h2 className="text-lg sm:text-2xl font-bold text-foreground mb-2">
+                  {language === "ar" ? "خيار التوصيل" : "Delivery Option"}
+                </h2>
+                <div
+                  onClick={() => setIsExpressDelivery(!isExpressDelivery)}
+                  className={`p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                    isExpressDelivery
+                      ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
+                      : "border-border hover:border-orange-300"
+                  }`}
+                >
                     <div className="flex items-start gap-3">
                       <div
                         className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
@@ -1450,7 +1462,6 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </div>
-                </div>
               </div>
 
               {/* Driver Tip Section */}
