@@ -683,25 +683,75 @@ function createApp() {
   // Create new order
   app.post('/api/orders', (req, res) => {
     try {
-      const { userId, items, addressId, paymentMethod, deliveryNotes, discountCode } = req.body;
+      const { userId, items, addressId, deliveryAddress: providedAddress, paymentMethod, deliveryNotes, discountCode } = req.body;
 
-      if (!userId || !items || !items.length || !addressId || !paymentMethod) {
+      if (!userId || !items || !items.length || !paymentMethod) {
         return res.status(400).json({ 
           success: false, 
-          error: 'Missing required fields: userId, items, addressId, paymentMethod' 
+          error: 'Missing required fields: userId, items, paymentMethod' 
         });
       }
 
-      // Get user
-      const user = users.get(userId);
+      // Get user - if not found in memory, create a temporary user from the request
+      let user = users.get(userId);
       if (!user) {
-        return res.status(404).json({ success: false, error: 'User not found' });
+        // For newly registered users that might not be in the serverless memory,
+        // we'll still process the order if we have the delivery address
+        if (!providedAddress) {
+          return res.status(404).json({ success: false, error: 'User not found' });
+        }
+        // Create a minimal user object for the order
+        user = {
+          id: userId,
+          email: '',
+          mobile: providedAddress.mobile || '',
+          password: '',
+          firstName: providedAddress.fullName?.split(' ')[0] || 'Customer',
+          familyName: providedAddress.fullName?.split(' ').slice(1).join(' ') || '',
+          role: 'customer' as const,
+          isActive: true,
+          isVerified: false,
+          emirate: providedAddress.emirate || '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          preferences: {
+            language: 'en' as const,
+            currency: 'AED' as const,
+            emailNotifications: true,
+            smsNotifications: true,
+            marketingEmails: true,
+          },
+        };
       }
 
-      // Get address
-      const address = addresses.get(addressId);
+      // Get address - try from memory first, then use provided address as fallback
+      let address = addresses.get(addressId);
+      if (!address && providedAddress) {
+        // Use the provided address data directly
+        address = {
+          id: addressId || `addr_${Date.now()}`,
+          userId: userId,
+          label: 'Home',
+          fullName: providedAddress.fullName || `${user.firstName} ${user.familyName}`,
+          mobile: providedAddress.mobile || user.mobile,
+          emirate: providedAddress.emirate || '',
+          area: providedAddress.area || '',
+          street: providedAddress.street || '',
+          building: providedAddress.building || '',
+          floor: providedAddress.floor,
+          apartment: providedAddress.apartment,
+          latitude: providedAddress.latitude,
+          longitude: providedAddress.longitude,
+          isDefault: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        // Save it for future use
+        addresses.set(address.id, address);
+      }
+      
       if (!address) {
-        return res.status(404).json({ success: false, error: 'Address not found' });
+        return res.status(404).json({ success: false, error: 'Address not found. Please provide delivery address.' });
       }
 
       // Calculate order items with prices from products

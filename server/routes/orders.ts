@@ -24,6 +24,25 @@ const createOrderSchema = z.object({
   paymentMethod: z.enum(["card", "cod", "bank_transfer"]),
   deliveryNotes: z.string().optional(),
   discountCode: z.string().optional(),
+  // Fallback delivery address for when user/address not in server memory
+  deliveryAddress: z.object({
+    id: z.string().optional(),
+    userId: z.string().optional(),
+    label: z.string(),
+    street: z.string(),
+    building: z.string().optional(),
+    apartment: z.string().optional(),
+    city: z.string(),
+    emirate: z.string().optional(),
+    country: z.string().optional(),
+    postalCode: z.string().optional(),
+    phone: z.string(),
+    isDefault: z.boolean().optional(),
+    location: z.object({
+      lat: z.number(),
+      lng: z.number(),
+    }).optional(),
+  }).optional(),
 });
 
 const updateStatusSchema = z.object({
@@ -158,26 +177,65 @@ const createOrder: RequestHandler = async (req, res) => {
       return res.status(400).json(response);
     }
 
-    const { userId, items, addressId, paymentMethod, deliveryNotes, discountCode } = validation.data;
+    const { userId, items, addressId, paymentMethod, deliveryNotes, discountCode, deliveryAddress } = validation.data;
 
-    // Validate user
-    const user = db.users.get(userId);
+    // Validate user - create minimal user if not found but deliveryAddress provided
+    let user = db.users.get(userId);
     if (!user) {
-      const response: ApiResponse<null> = {
-        success: false,
-        error: "User not found",
-      };
-      return res.status(404).json(response);
+      if (deliveryAddress) {
+        // Create a minimal user object from the delivery address
+        user = {
+          id: userId,
+          email: `user-${userId}@temp.local`,
+          username: deliveryAddress.label || 'Customer',
+          phone: deliveryAddress.phone,
+          role: 'customer' as const,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          isActive: true,
+          loyaltyPoints: 0,
+          loyaltyTier: 'bronze' as const,
+        };
+        db.users.set(userId, user);
+      } else {
+        const response: ApiResponse<null> = {
+          success: false,
+          error: "User not found",
+        };
+        return res.status(404).json(response);
+      }
     }
 
-    // Validate address
-    const address = db.addresses.get(addressId);
+    // Validate address - use deliveryAddress as fallback
+    let address = db.addresses.get(addressId);
     if (!address) {
-      const response: ApiResponse<null> = {
-        success: false,
-        error: "Address not found",
-      };
-      return res.status(404).json(response);
+      if (deliveryAddress) {
+        // Create address from the provided delivery address data
+        address = {
+          id: addressId || generateId("addr"),
+          userId: userId,
+          label: deliveryAddress.label,
+          street: deliveryAddress.street,
+          building: deliveryAddress.building || '',
+          apartment: deliveryAddress.apartment || '',
+          city: deliveryAddress.city,
+          emirate: deliveryAddress.emirate || 'Dubai',
+          country: deliveryAddress.country || 'UAE',
+          postalCode: deliveryAddress.postalCode || '',
+          phone: deliveryAddress.phone,
+          isDefault: deliveryAddress.isDefault || true,
+          location: deliveryAddress.location,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        db.addresses.set(address.id, address);
+      } else {
+        const response: ApiResponse<null> = {
+          success: false,
+          error: "Address not found",
+        };
+        return res.status(404).json(response);
+      }
     }
 
     // Build order items and calculate totals

@@ -1036,6 +1036,19 @@ export default function CheckoutPage() {
           };
         }),
         addressId: selectedAddressId,
+        // Also send full address data as fallback for cases where addressId is not on server
+        deliveryAddress: selectedAddress ? {
+          fullName: selectedAddress.fullName,
+          mobile: selectedAddress.mobile,
+          emirate: selectedAddress.emirate,
+          area: selectedAddress.area,
+          street: selectedAddress.street,
+          building: selectedAddress.building,
+          floor: selectedAddress.floor,
+          apartment: selectedAddress.apartment,
+          latitude: selectedAddress.latitude,
+          longitude: selectedAddress.longitude,
+        } : undefined,
         paymentMethod: "cod",
         deliveryNotes: deliveryNotes,
       });

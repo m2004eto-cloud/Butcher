@@ -53,57 +53,95 @@ export const setAuthToken = (token: string | null) => {
 
 export const getAuthToken = () => authToken;
 
-// Generic fetch wrapper
+// Helper for delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Generic fetch wrapper with retry logic for cold starts
 async function fetchApi<T>(
   endpoint: string,
-  options?: RequestInit
+  options?: RequestInit,
+  retries: number = 2,
+  retryDelay: number = 1000
 ): Promise<ApiResponse<T>> {
-  try {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      ...(options?.headers as Record<string, string>),
-    };
-
-    // Add auth token if available
-    if (authToken) {
-      headers["Authorization"] = `Bearer ${authToken}`;
-    }
-
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-      ...options,
-      headers,
-    });
-
-    // Handle empty responses (204 No Content, or empty body)
-    const text = await response.text();
-    
-    if (!text) {
-      // Empty response - return success/failure based on status code
-      if (response.ok) {
-        return { success: true, data: null as T };
-      } else {
-        return { success: false, error: `Request failed with status ${response.status}` };
-      }
-    }
-
-    // Try to parse as JSON
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const data = JSON.parse(text);
-      return data;
-    } catch {
-      // Response is not JSON
-      if (response.ok) {
-        return { success: true, data: text as T };
-      } else {
-        return { success: false, error: text || `Request failed with status ${response.status}` };
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(options?.headers as Record<string, string>),
+      };
+
+      // Add auth token if available
+      if (authToken) {
+        headers["Authorization"] = `Bearer ${authToken}`;
+      }
+
+      const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers,
+      });
+
+      // Handle empty responses (204 No Content, or empty body)
+      const text = await response.text();
+      
+      if (!text) {
+        // Empty response - return success/failure based on status code
+        if (response.ok) {
+          return { success: true, data: null as T };
+        } else {
+          // Retry on 5xx errors (server errors, often cold start issues)
+          if (response.status >= 500 && attempt < retries) {
+            lastError = new Error(`Server error: ${response.status}`);
+            await delay(retryDelay * (attempt + 1));
+            continue;
+          }
+          return { success: false, error: `Request failed with status ${response.status}` };
+        }
+      }
+
+      // Try to parse as JSON
+      try {
+        const data = JSON.parse(text);
+        
+        // If server returned an error and it's a 5xx, retry
+        if (!data.success && response.status >= 500 && attempt < retries) {
+          lastError = new Error(data.error || 'Server error');
+          await delay(retryDelay * (attempt + 1));
+          continue;
+        }
+        
+        return data;
+      } catch {
+        // Response is not JSON
+        if (response.ok) {
+          return { success: true, data: text as T };
+        } else {
+          // Retry on 5xx errors
+          if (response.status >= 500 && attempt < retries) {
+            lastError = new Error(text || `Server error: ${response.status}`);
+            await delay(retryDelay * (attempt + 1));
+            continue;
+          }
+          return { success: false, error: text || `Request failed with status ${response.status}` };
+        }
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error("Network error");
+      
+      // Retry on network errors (common during cold starts)
+      if (attempt < retries) {
+        await delay(retryDelay * (attempt + 1));
+        continue;
       }
     }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Network error",
-    };
   }
+  
+  // All retries exhausted
+  return {
+    success: false,
+    error: lastError?.message || "Network error after retries",
+  };
 }
 
 // =====================================================
@@ -409,6 +447,18 @@ export const ordersApi = {
     userId: string;
     items: { productId: string; quantity: number; notes?: string }[];
     addressId: string;
+    deliveryAddress?: {
+      fullName: string;
+      mobile: string;
+      emirate: string;
+      area: string;
+      street: string;
+      building: string;
+      floor?: string;
+      apartment?: string;
+      latitude?: number;
+      longitude?: number;
+    };
     paymentMethod: "card" | "cod" | "bank_transfer";
     deliveryNotes?: string;
     discountCode?: string;
