@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ChevronRight, 
-  ChevronLeft,
   Flame,
   Sparkles,
   Clock,
@@ -13,8 +12,7 @@ import {
   Gift,
   Percent,
   ShoppingBag,
-  Heart,
-  ArrowRight
+  Heart
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useProducts } from "@/context/ProductsContext";
@@ -208,9 +206,6 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  const nextBanner = () => setCurrentBanner((prev) => (prev + 1) % banners.length);
-  const prevBanner = () => setCurrentBanner((prev) => (prev - 1 + banners.length) % banners.length);
-
   return (
     <div className="min-h-screen bg-background" dir={isRTL ? "rtl" : "ltr"}>
       {/* Hero Banner Carousel */}
@@ -221,61 +216,35 @@ export default function HomePage() {
         >
           {banners.map((banner) => (
             <div key={banner.id} className="w-full flex-shrink-0">
-              <Link to={banner.link}>
-                <div className={cn("relative bg-gradient-to-r h-48 md:h-64", banner.bgColor)}>
-                  <div className="absolute inset-0 bg-black/20" />
-                  <div className="relative max-w-7xl mx-auto px-4 h-full flex items-center">
-                    <div className="text-white max-w-md">
-                      {banner.badge && (
-                        <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-bold mb-2">
-                          {banner.badge}
-                        </span>
-                      )}
-                      <h2 className="text-2xl md:text-4xl font-bold mb-2">
-                        {isRTL ? banner.titleAr : banner.titleEn}
-                      </h2>
-                      <p className="text-sm md:text-base opacity-90">
-                        {(isRTL ? banner.subtitleAr : banner.subtitleEn).includes("{CURRENCY}") ? (
-                          <>
-                            {(isRTL ? banner.subtitleAr : banner.subtitleEn).split("{CURRENCY}")[0]}
-                            <CurrencySymbol size="sm" className="inline-block mx-1" />
-                            {(isRTL ? banner.subtitleAr : banner.subtitleEn).split("{CURRENCY}")[1]}
-                          </>
-                        ) : (
-                          isRTL ? banner.subtitleAr : banner.subtitleEn
-                        )}
-                      </p>
-                      <span className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-white text-gray-900 rounded-full font-medium text-sm hover:bg-gray-100 transition-colors">
-                        {tt.shopNow}
-                        <ArrowRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
+              <div className={cn("relative bg-gradient-to-r h-48 md:h-64", banner.bgColor)}>
+                <div className="absolute inset-0 bg-black/20" />
+                <div className="relative max-w-7xl mx-auto px-4 h-full flex items-center">
+                  <div className="text-white max-w-md">
+                    {banner.badge && (
+                      <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-bold mb-2">
+                        {banner.badge}
                       </span>
-                    </div>
+                    )}
+                    <h2 className="text-2xl md:text-4xl font-bold mb-2">
+                      {isRTL ? banner.titleAr : banner.titleEn}
+                    </h2>
+                    <p className="text-sm md:text-base opacity-90">
+                      {(isRTL ? banner.subtitleAr : banner.subtitleEn).includes("{CURRENCY}") ? (
+                        <>
+                          {(isRTL ? banner.subtitleAr : banner.subtitleEn).split("{CURRENCY}")[0]}
+                          <CurrencySymbol size="sm" className="inline-block mx-1" />
+                          {(isRTL ? banner.subtitleAr : banner.subtitleEn).split("{CURRENCY}")[1]}
+                        </>
+                      ) : (
+                        isRTL ? banner.subtitleAr : banner.subtitleEn
+                      )}
+                    </p>
                   </div>
                 </div>
-              </Link>
+              </div>
             </div>
           ))}
         </div>
-
-        {/* Banner Navigation */}
-        <button
-          onClick={prevBanner}
-          className={cn(
-            "absolute top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors",
-            isRTL ? "right-4" : "left-4"
-          )}
-        >
-          <ChevronLeft className={cn("w-5 h-5", isRTL && "rotate-180")} />
-        </button>
-        <button
-          onClick={nextBanner}
-          className={cn(
-            "absolute top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors",
-            isRTL ? "left-4" : "right-4"
-          )}
-        >
-          <ChevronRight className={cn("w-5 h-5", isRTL && "rotate-180")} />
-        </button>
 
         {/* Banner Dots */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
