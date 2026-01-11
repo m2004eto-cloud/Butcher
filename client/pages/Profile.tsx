@@ -52,6 +52,103 @@ export default function ProfilePage() {
   const [referralInput, setReferralInput] = useState("");
   const [referralCopied, setReferralCopied] = useState(false);
   const [referralMessage, setReferralMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<Array<{
+    id: string;
+    label: string;
+    fullName: string;
+    mobile: string;
+    emirate: string;
+    area: string;
+    street: string;
+    building: string;
+    floor?: string;
+    apartment?: string;
+    isDefault: boolean;
+  }>>([]);
+  const [addressForm, setAddressForm] = useState({
+    label: "Home",
+    fullName: user?.firstName && user?.familyName ? `${user.firstName} ${user.familyName}` : "",
+    mobile: user?.mobile || "",
+    emirate: user?.emirate || "",
+    area: "",
+    street: "",
+    building: "",
+    floor: "",
+    apartment: "",
+    isDefault: true,
+  });
+
+  // Load saved addresses from localStorage
+  useEffect(() => {
+    if (user?.id) {
+      const saved = localStorage.getItem(`addresses_${user.id}`);
+      if (saved) {
+        try {
+          setSavedAddresses(JSON.parse(saved));
+        } catch {
+          setSavedAddresses([]);
+        }
+      }
+    }
+  }, [user?.id]);
+
+  // Save address handler
+  const handleSaveAddress = () => {
+    if (!addressForm.fullName || !addressForm.mobile || !addressForm.emirate || !addressForm.area || !addressForm.street || !addressForm.building) {
+      return;
+    }
+    
+    const newAddress = {
+      id: `addr_${Date.now()}`,
+      ...addressForm,
+    };
+    
+    const updatedAddresses = addressForm.isDefault
+      ? savedAddresses.map(addr => ({ ...addr, isDefault: false })).concat(newAddress)
+      : [...savedAddresses, newAddress];
+    
+    setSavedAddresses(updatedAddresses);
+    if (user?.id) {
+      localStorage.setItem(`addresses_${user.id}`, JSON.stringify(updatedAddresses));
+    }
+    
+    // Reset form and hide it
+    setAddressForm({
+      label: "Home",
+      fullName: user?.firstName && user?.familyName ? `${user.firstName} ${user.familyName}` : "",
+      mobile: user?.mobile || "",
+      emirate: user?.emirate || "",
+      area: "",
+      street: "",
+      building: "",
+      floor: "",
+      apartment: "",
+      isDefault: false,
+    });
+    setShowAddressForm(false);
+  };
+
+  // Delete address handler
+  const handleDeleteAddress = (addressId: string) => {
+    const updatedAddresses = savedAddresses.filter(addr => addr.id !== addressId);
+    setSavedAddresses(updatedAddresses);
+    if (user?.id) {
+      localStorage.setItem(`addresses_${user.id}`, JSON.stringify(updatedAddresses));
+    }
+  };
+
+  // Set default address handler
+  const handleSetDefaultAddress = (addressId: string) => {
+    const updatedAddresses = savedAddresses.map(addr => ({
+      ...addr,
+      isDefault: addr.id === addressId,
+    }));
+    setSavedAddresses(updatedAddresses);
+    if (user?.id) {
+      localStorage.setItem(`addresses_${user.id}`, JSON.stringify(updatedAddresses));
+    }
+  };
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -116,6 +213,20 @@ export default function ProfilePage() {
       viewOrders: "View Orders",
       totalOrders: "Total Orders",
       memberSince: "Member Since",
+      addNewAddress: "Add New Address",
+      addressLabel: "Address Label",
+      fullName: "Full Name",
+      area: "Area",
+      street: "Street Address",
+      building: "Building Name/Number",
+      floor: "Floor (Optional)",
+      apartment: "Apartment (Optional)",
+      setAsDefault: "Set as default address",
+      saveAddress: "Save Address",
+      home: "Home",
+      work: "Work",
+      other: "Other",
+      selectEmirate: "Select Emirate",
     },
     ar: {
       myAccount: "حسابي",
@@ -162,6 +273,20 @@ export default function ProfilePage() {
       viewOrders: "عرض الطلبات",
       totalOrders: "إجمالي الطلبات",
       memberSince: "عضو منذ",
+      addNewAddress: "إضافة عنوان جديد",
+      addressLabel: "تسمية العنوان",
+      fullName: "الاسم الكامل",
+      area: "المنطقة",
+      street: "عنوان الشارع",
+      building: "اسم/رقم المبنى",
+      floor: "الطابق (اختياري)",
+      apartment: "الشقة (اختياري)",
+      setAsDefault: "تعيين كعنوان افتراضي",
+      saveAddress: "حفظ العنوان",
+      home: "المنزل",
+      work: "العمل",
+      other: "آخر",
+      selectEmirate: "اختر الإمارة",
     },
   };
 
@@ -395,12 +520,237 @@ export default function ProfilePage() {
               <div className="card-premium p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-foreground">{t.savedAddresses}</h2>
-                  <button onClick={() => navigate("/checkout")} className="btn-primary flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    {t.addAddress}
-                  </button>
+                  {!showAddressForm && (
+                    <button onClick={() => setShowAddressForm(true)} className="btn-primary flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
+                      {t.addAddress}
+                    </button>
+                  )}
                 </div>
-                <p className="text-muted-foreground text-center py-8">{t.noAddresses}</p>
+
+                {/* Add New Address Form */}
+                {showAddressForm && (
+                  <div className="border border-border rounded-xl p-4 mb-6 space-y-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-semibold text-foreground">{t.addNewAddress}</h3>
+                      <button
+                        onClick={() => setShowAddressForm(false)}
+                        className="p-1 hover:bg-muted rounded-full transition-colors"
+                      >
+                        <X className="w-5 h-5 text-muted-foreground" />
+                      </button>
+                    </div>
+
+                    {/* Address Label */}
+                    <div>
+                      <label className="block text-sm font-medium text-muted-foreground mb-2">{t.addressLabel}</label>
+                      <div className="flex gap-2">
+                        {["Home", "Work", "Other"].map((label) => (
+                          <button
+                            key={label}
+                            onClick={() => setAddressForm({ ...addressForm, label })}
+                            className={cn(
+                              "px-4 py-2 rounded-lg font-medium transition-colors",
+                              addressForm.label === label
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted hover:bg-muted/80"
+                            )}
+                          >
+                            {label === "Home" ? t.home : label === "Work" ? t.work : t.other}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Full Name & Mobile */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">{t.fullName} *</label>
+                        <input
+                          type="text"
+                          value={addressForm.fullName}
+                          onChange={(e) => setAddressForm({ ...addressForm, fullName: e.target.value })}
+                          className="w-full px-3 py-2 border border-border rounded-lg focus:border-primary outline-none"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">{t.mobile} *</label>
+                        <input
+                          type="tel"
+                          value={addressForm.mobile}
+                          onChange={(e) => setAddressForm({ ...addressForm, mobile: e.target.value })}
+                          className="w-full px-3 py-2 border border-border rounded-lg focus:border-primary outline-none"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Emirate & Area */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">{t.emirate} *</label>
+                        <select
+                          value={addressForm.emirate}
+                          onChange={(e) => setAddressForm({ ...addressForm, emirate: e.target.value })}
+                          className="w-full px-3 py-2 border border-border rounded-lg focus:border-primary outline-none bg-background"
+                          required
+                        >
+                          <option value="">{t.selectEmirate}</option>
+                          <option value="Abu Dhabi">Abu Dhabi</option>
+                          <option value="Dubai">Dubai</option>
+                          <option value="Sharjah">Sharjah</option>
+                          <option value="Ajman">Ajman</option>
+                          <option value="Umm Al Quwain">Umm Al Quwain</option>
+                          <option value="Ras Al Khaimah">Ras Al Khaimah</option>
+                          <option value="Fujairah">Fujairah</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">{t.area} *</label>
+                        <input
+                          type="text"
+                          value={addressForm.area}
+                          onChange={(e) => setAddressForm({ ...addressForm, area: e.target.value })}
+                          className="w-full px-3 py-2 border border-border rounded-lg focus:border-primary outline-none"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Street & Building */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">{t.street} *</label>
+                        <input
+                          type="text"
+                          value={addressForm.street}
+                          onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })}
+                          className="w-full px-3 py-2 border border-border rounded-lg focus:border-primary outline-none"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">{t.building} *</label>
+                        <input
+                          type="text"
+                          value={addressForm.building}
+                          onChange={(e) => setAddressForm({ ...addressForm, building: e.target.value })}
+                          className="w-full px-3 py-2 border border-border rounded-lg focus:border-primary outline-none"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Floor & Apartment */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">{t.floor}</label>
+                        <input
+                          type="text"
+                          value={addressForm.floor}
+                          onChange={(e) => setAddressForm({ ...addressForm, floor: e.target.value })}
+                          className="w-full px-3 py-2 border border-border rounded-lg focus:border-primary outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-muted-foreground mb-1">{t.apartment}</label>
+                        <input
+                          type="text"
+                          value={addressForm.apartment}
+                          onChange={(e) => setAddressForm({ ...addressForm, apartment: e.target.value })}
+                          className="w-full px-3 py-2 border border-border rounded-lg focus:border-primary outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Default Address Checkbox */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="isDefault"
+                        checked={addressForm.isDefault}
+                        onChange={(e) => setAddressForm({ ...addressForm, isDefault: e.target.checked })}
+                        className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
+                      />
+                      <label htmlFor="isDefault" className="text-sm font-medium text-muted-foreground">
+                        {t.setAsDefault}
+                      </label>
+                    </div>
+
+                    {/* Save Button */}
+                    <div className="flex gap-3 pt-2">
+                      <button
+                        onClick={handleSaveAddress}
+                        className="btn-primary flex-1"
+                        disabled={!addressForm.fullName || !addressForm.mobile || !addressForm.emirate || !addressForm.area || !addressForm.street || !addressForm.building}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {t.saveAddress}
+                      </button>
+                      <button
+                        onClick={() => setShowAddressForm(false)}
+                        className="btn-outline flex-1"
+                      >
+                        {t.cancel}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Saved Addresses List */}
+                {savedAddresses.length > 0 ? (
+                  <div className="space-y-4">
+                    {savedAddresses.map((address) => (
+                      <div
+                        key={address.id}
+                        className={cn(
+                          "border rounded-xl p-4 relative",
+                          address.isDefault ? "border-primary bg-primary/5" : "border-border"
+                        )}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="px-2 py-0.5 bg-muted rounded text-xs font-medium">
+                              {address.label === "Home" ? t.home : address.label === "Work" ? t.work : t.other}
+                            </span>
+                            {address.isDefault && (
+                              <span className="px-2 py-0.5 bg-primary/20 text-primary rounded text-xs font-medium">
+                                {t.defaultAddress}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleDeleteAddress(address.id)}
+                            className="text-destructive hover:text-destructive/80 text-sm font-medium"
+                          >
+                            {t.remove}
+                          </button>
+                        </div>
+                        <p className="font-medium text-foreground">{address.fullName}</p>
+                        <p className="text-muted-foreground text-sm">
+                          {address.building}, {address.street}
+                          {address.floor && `, Floor ${address.floor}`}
+                          {address.apartment && `, Apt ${address.apartment}`}
+                        </p>
+                        <p className="text-muted-foreground text-sm">{address.area}, {address.emirate}</p>
+                        <p className="text-muted-foreground text-sm">{address.mobile}</p>
+                        {!address.isDefault && (
+                          <button
+                            onClick={() => handleSetDefaultAddress(address.id)}
+                            className="text-primary hover:text-primary/80 text-sm font-medium mt-2"
+                          >
+                            {t.setAsDefault}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  !showAddressForm && (
+                    <p className="text-muted-foreground text-center py-8">{t.noAddresses}</p>
+                  )
+                )}
               </div>
             )}
 
