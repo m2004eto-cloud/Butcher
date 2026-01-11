@@ -19,6 +19,7 @@ import { useProducts } from "@/context/ProductsContext";
 import { useOrders } from "@/context/OrdersContext";
 import { useAuth } from "@/context/AuthContext";
 import { useBasket, BasketItem } from "@/context/BasketContext";
+import { useSettings } from "@/context/SettingsContext";
 import { cn } from "@/lib/utils";
 import ProductCard from "@/components/ProductCard";
 import { PRODUCT_CATEGORIES } from "@shared/categories";
@@ -35,31 +36,9 @@ interface Banner {
   bgColor: string;
   link: string;
   badge?: string;
+  badgeAr?: string;
+  enabled?: boolean;
 }
-
-const banners: Banner[] = [
-  {
-    id: "1",
-    titleEn: "Fresh Premium Cuts",
-    titleAr: "قطع طازجة ممتازة",
-    subtitleEn: "Up to 30% off on Australian Wagyu",
-    subtitleAr: "خصم يصل إلى 30% على واغيو الأسترالي",
-    image: "/photos/hero-meat.jpg",
-    bgColor: "from-red-600 to-red-800",
-    link: "/products?category=premium",
-    badge: "HOT DEAL",
-  },
-  {
-    id: "2",
-    titleEn: "Free Delivery",
-    titleAr: "توصيل مجاني",
-    subtitleEn: "On orders above {CURRENCY} 1000",
-    subtitleAr: "للطلبات فوق {CURRENCY} 1000",
-    image: "/photos/delivery.jpg",
-    bgColor: "from-blue-600 to-blue-800",
-    link: "/products",
-  },
-];
 
 export default function HomePage() {
   const { language } = useLanguage();
@@ -67,8 +46,12 @@ export default function HomePage() {
   const { orders } = useOrders();
   const { user, isLoggedIn } = useAuth();
   const { addItem } = useBasket();
+  const { banners: allBanners, settings } = useSettings();
   const navigate = useNavigate();
   const isRTL = language === "ar";
+  
+  // Filter to only show enabled banners
+  const banners = allBanners.filter((b) => b.enabled);
   
   const [currentBanner, setCurrentBanner] = useState(0);
 
@@ -87,11 +70,12 @@ export default function HomePage() {
 
   // Auto-rotate banners
   useEffect(() => {
+    if (banners.length === 0) return;
     const interval = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % banners.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [banners.length]);
 
   // Translations
   const t = {

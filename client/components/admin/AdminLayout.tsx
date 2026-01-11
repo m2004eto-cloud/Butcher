@@ -35,6 +35,8 @@ import {
   Image,
   File,
   Beef,
+  Tag,
+  ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAdminChat, ChatAttachment } from "@/context/ChatContext";
@@ -49,6 +51,8 @@ export type AdminTab =
   | "delivery"
   | "payments"
   | "reports"
+  | "promoCodes"
+  | "banners"
   | "settings";
 
 interface AdminLayoutProps {
@@ -69,6 +73,8 @@ const tabConfig: { id: AdminTab; labelKey: string; icon: React.ElementType }[] =
   { id: "delivery", labelKey: "admin.delivery", icon: Truck },
   { id: "payments", labelKey: "admin.payments", icon: CreditCard },
   { id: "reports", labelKey: "admin.reports", icon: BarChart3 },
+  { id: "promoCodes", labelKey: "admin.promoCodes", icon: Tag },
+  { id: "banners", labelKey: "admin.banners", icon: ImageIcon },
   { id: "settings", labelKey: "admin.settings", icon: Settings },
 ];
 

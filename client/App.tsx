@@ -17,6 +17,7 @@ import { ReviewsProvider } from "@/context/ReviewsContext";
 import { LoyaltyProvider } from "@/context/LoyaltyContext";
 import { OrdersProvider } from "@/context/OrdersContext";
 import { WalletProvider } from "@/context/WalletContext";
+import { SettingsProvider } from "@/context/SettingsContext";
 import { useCapacitorInit } from "@/hooks/useCapacitor";
 import { Layout } from "@/components/Layout";
 
@@ -51,22 +52,23 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <AuthProvider>
-          <NotificationProvider>
-            <ChatProvider>
-              <ProductsProvider>
-                <WishlistProvider>
-                  <ReviewsProvider>
-                    <LoyaltyProvider>
-                      <OrdersProvider>
-                        <WalletProvider>
-                          <BasketProvider>
-                            <TooltipProvider>
-                              <Toaster />
-                              <Sonner />
-                              <BrowserRouter>
-                                <Routes>
-                                  {/* Homepage - Default landing page */}
-                                  <Route path="/" element={<Layout><Home /></Layout>} />
+          <SettingsProvider>
+            <NotificationProvider>
+              <ChatProvider>
+                <ProductsProvider>
+                  <WishlistProvider>
+                    <ReviewsProvider>
+                      <LoyaltyProvider>
+                        <OrdersProvider>
+                          <WalletProvider>
+                            <BasketProvider>
+                              <TooltipProvider>
+                                <Toaster />
+                                <Sonner />
+                                <BrowserRouter>
+                                  <Routes>
+                                    {/* Homepage - Default landing page */}
+                                    <Route path="/" element={<Layout><Home /></Layout>} />
                                   
                                   {/* Auth Routes - No header/footer */}
                                   <Route path="/login" element={<Login />} />
@@ -113,10 +115,11 @@ const App = () => {
               </ProductsProvider>
             </ChatProvider>
           </NotificationProvider>
-        </AuthProvider>
-      </LanguageProvider>
-    </QueryClientProvider>
-  );
+        </SettingsProvider>
+      </AuthProvider>
+    </LanguageProvider>
+  </QueryClientProvider>
+);
 };
 
 createRoot(document.getElementById("root")!).render(<App />);

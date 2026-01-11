@@ -14,70 +14,51 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useProducts } from "@/context/ProductsContext";
+import { useSettings } from "@/context/SettingsContext";
 import { cn } from "@/lib/utils";
 import ProductCard from "@/components/ProductCard";
-
-interface PromoCode {
-  id: string;
-  code: string;
-  titleEn: string;
-  titleAr: string;
-  descriptionEn: string;
-  descriptionAr: string;
-  discount: number;
-  discountType: "percentage" | "fixed";
-  minOrder?: number;
-  expiresAt?: string;
-  bgColor: string;
-}
-
-const promoCodes: PromoCode[] = [
-  {
-    id: "1",
-    code: "FRESH20",
-    titleEn: "New Customer Offer",
-    titleAr: "عرض العملاء الجدد",
-    descriptionEn: "20% off your first order",
-    descriptionAr: "خصم 20% على طلبك الأول",
-    discount: 20,
-    discountType: "percentage",
-    bgColor: "from-purple-500 to-indigo-600",
-  },
-  {
-    id: "2",
-    code: "MEAT50",
-    titleEn: "Weekend Special",
-    titleAr: "عرض نهاية الأسبوع",
-    descriptionEn: "AED 50 off on orders above AED 300",
-    descriptionAr: "خصم 50 درهم على الطلبات فوق 300 درهم",
-    discount: 50,
-    discountType: "fixed",
-    minOrder: 300,
-    bgColor: "from-red-500 to-pink-600",
-  },
-  {
-    id: "3",
-    code: "EIDJOY",
-    titleEn: "Eid Celebration",
-    titleAr: "احتفال العيد",
-    descriptionEn: "15% off on all lamb products",
-    descriptionAr: "خصم 15% على جميع منتجات الضأن",
-    discount: 15,
-    discountType: "percentage",
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    bgColor: "from-emerald-500 to-teal-600",
-  },
-];
 
 type DealCategory = "all" | "flash" | "bundle" | "seasonal" | "clearance";
 
 export default function DealsPage() {
   const { language } = useLanguage();
   const { products } = useProducts();
+  const { promoCodes: adminPromoCodes } = useSettings();
   const isRTL = language === "ar";
 
   const [activeCategory, setActiveCategory] = useState<DealCategory>("all");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Convert admin promo codes to display format
+  const promoCodes = useMemo(() => {
+    const bgColors = [
+      "from-purple-500 to-indigo-600",
+      "from-red-500 to-pink-600",
+      "from-emerald-500 to-teal-600",
+      "from-amber-500 to-orange-600",
+      "from-blue-500 to-cyan-600",
+    ];
+    
+    return adminPromoCodes
+      .filter((p) => p.enabled)
+      .map((p, index) => ({
+        id: p.id,
+        code: p.code,
+        titleEn: p.description || `${p.discount}${p.type === "percent" ? "%" : " AED"} Off`,
+        titleAr: p.descriptionAr || `خصم ${p.discount}${p.type === "percent" ? "%" : " درهم"}`,
+        descriptionEn: p.minOrder 
+          ? `${p.discount}${p.type === "percent" ? "%" : " AED"} off on orders above ${p.minOrder} AED`
+          : `${p.discount}${p.type === "percent" ? "%" : " AED"} off your order`,
+        descriptionAr: p.minOrder
+          ? `خصم ${p.discount}${p.type === "percent" ? "%" : " درهم"} على الطلبات فوق ${p.minOrder} درهم`
+          : `خصم ${p.discount}${p.type === "percent" ? "%" : " درهم"} على طلبك`,
+        discount: p.discount,
+        discountType: p.type === "percent" ? "percentage" as const : "fixed" as const,
+        minOrder: p.minOrder,
+        expiresAt: p.expiryDate,
+        bgColor: bgColors[index % bgColors.length],
+      }));
+  }, [adminPromoCodes]);
 
   // Translations
   const t = {

@@ -150,6 +150,8 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.payments": "Payments",
     "admin.reports": "Reports",
     "admin.settings": "Settings",
+    "admin.promoCodes": "Promo Codes",
+    "admin.banners": "Banners",
     
     // Dashboard
     "dashboard.todayOrders": "Today's Orders",
@@ -381,6 +383,8 @@ const translations: Record<Language, Record<string, string>> = {
     "admin.payments": "المدفوعات",
     "admin.reports": "التقارير",
     "admin.settings": "الإعدادات",
+    "admin.promoCodes": "أكواد الخصم",
+    "admin.banners": "البانرات",
     
     // Dashboard
     "dashboard.todayOrders": "طلبات اليوم",

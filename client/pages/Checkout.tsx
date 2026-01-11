@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useBasket } from "@/context/BasketContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
+import { useSettings } from "@/context/SettingsContext";
 import { useNotifications, createOrderNotification, createUserOrderNotification, createUserPaymentNotification, createDetailedInvoiceNotification, generateInvoiceNumber, type InvoiceData } from "@/context/NotificationContext";
 import { PriceDisplay } from "@/components/CurrencySymbol";
 import { ordersApi, deliveryApi } from "@/lib/api";
@@ -533,6 +534,7 @@ export default function CheckoutPage() {
   const { language } = useLanguage();
   const isRTL = language === 'ar';
   const { addNotification } = useNotifications();
+  const { validatePromoCode, settings, timeSlots: adminTimeSlots } = useSettings();
   
   // Promo code state
   const [promoCode, setPromoCode] = useState("");
@@ -540,39 +542,30 @@ export default function CheckoutPage() {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [isApplyingPromo, setIsApplyingPromo] = useState(false);
 
-  // Demo promo codes (in production, these would be validated on the server)
-  const validPromoCodes: Record<string, { discount: number; type: "percent" | "fixed"; minOrder?: number }> = {
-    "WELCOME10": { discount: 10, type: "percent" },
-    "SAVE20": { discount: 20, type: "fixed" },
-    "MEAT15": { discount: 15, type: "percent", minOrder: 100 },
-    "FIRSTORDER": { discount: 25, type: "fixed" },
-  };
-
   const handleApplyPromo = () => {
     setPromoError(null);
     setIsApplyingPromo(true);
     
-    // Simulate API call
+    // Validate promo code using SettingsContext
     setTimeout(() => {
-      const code = promoCode.toUpperCase().trim();
-      const promo = validPromoCodes[code];
+      const result = validatePromoCode(promoCode, subtotal);
       
-      if (promo) {
-        if (promo.minOrder && subtotal < promo.minOrder) {
-          setPromoError(
-            isRTL 
-              ? `الحد الأدنى للطلب ${promo.minOrder} درهم للاستفادة من هذا الكود`
-              : `Minimum order of AED ${promo.minOrder} required for this code`
-          );
-        } else {
-          setPromoApplied({ code, discount: promo.discount, type: promo.type });
-          setPromoError(null);
-        }
+      if (result.valid && result.promo) {
+        setPromoApplied({ 
+          code: result.promo.code, 
+          discount: result.promo.discount, 
+          type: result.promo.type 
+        });
+        setPromoError(null);
       } else {
-        setPromoError(isRTL ? "كود غير صالح" : "Invalid promo code");
+        setPromoError(
+          isRTL 
+            ? (result.error === "Invalid promo code" ? "كود غير صالح" : result.error || "كود غير صالح")
+            : (result.error || "Invalid promo code")
+        );
       }
       setIsApplyingPromo(false);
-    }, 500);
+    }, 300);
   };
 
   const handleRemovePromo = () => {
