@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Heart } from "lucide-react";
 import { useBasket } from "@/context/BasketContext";
@@ -10,13 +10,11 @@ import { PriceDisplay } from "@/components/CurrencySymbol";
 export default function BasketPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { items, subtotal, vat, total, removeItem, updateQuantity, saveBasket, clearBasket } =
+  const { items, subtotal, vat, total, removeItem, updateQuantity, clearBasket } =
     useBasket();
   const { addToWishlist, isInWishlist } = useWishlist();
   const { t, language } = useLanguage();
   const isRTL = language === 'ar';
-  const [savedBasketName, setSavedBasketName] = useState("");
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Helper function to get localized item name
   const getItemName = (item: typeof items[0]) => {
@@ -41,15 +39,6 @@ export default function BasketPage() {
     });
     // Remove from basket
     removeItem(item.id);
-  };
-
-  const handleSaveBasket = () => {
-    if (savedBasketName.trim()) {
-      saveBasket(savedBasketName);
-      setSavedBasketName("");
-      setShowSaveDialog(false);
-      alert("Basket saved successfully!");
-    }
   };
 
   if (items.length === 0) {
@@ -234,44 +223,29 @@ export default function BasketPage() {
                   {t("basket.checkout")}
                 </button>
 
-                {/* Save Basket */}
-                <div className="pt-3 sm:pt-4 border-t border-border">
-                  {!showSaveDialog ? (
-                    <button
-                      onClick={() => setShowSaveDialog(true)}
-                      className="w-full btn-outline py-2 rounded-lg text-xs sm:text-sm font-semibold"
-                    >
-                      Save for Later
-                    </button>
-                  ) : (
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        value={savedBasketName}
-                        onChange={(e) => setSavedBasketName(e.target.value)}
-                        placeholder="e.g., Weekend BBQ"
-                        className="w-full px-3 py-2 border border-input rounded-lg text-xs sm:text-sm focus:border-primary outline-none"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={handleSaveBasket}
-                          className="flex-1 bg-secondary text-secondary-foreground text-xs sm:text-sm font-semibold py-2 rounded-lg hover:bg-secondary/90 transition-colors"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => {
-                            setShowSaveDialog(false);
-                            setSavedBasketName("");
-                          }}
-                          className="flex-1 bg-muted text-foreground text-xs sm:text-sm font-semibold py-2 rounded-lg hover:bg-muted/80 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* Save All to Wishlist */}
+                <button
+                  onClick={() => {
+                    // Move all basket items to wishlist
+                    items.forEach((item) => {
+                      if (!isInWishlist(item.productId)) {
+                        addToWishlist({
+                          productId: item.productId,
+                          name: item.name,
+                          nameAr: item.nameAr,
+                          price: item.price,
+                          image: item.image,
+                          category: item.category || "",
+                        });
+                      }
+                    });
+                    // Clear the basket
+                    clearBasket();
+                  }}
+                  className="w-full btn-outline py-2 rounded-lg text-xs sm:text-sm font-semibold"
+                >
+                  {language === 'ar' ? 'حفظ لوقت لاحق' : 'Save for Later'}
+                </button>
 
                 {/* Clear Basket */}
                 <button
