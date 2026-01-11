@@ -240,6 +240,30 @@ export default function ProfilePage() {
     );
   };
 
+  // Close address form and cleanup map
+  const closeAddressForm = () => {
+    if (leafletMapRef.current) {
+      leafletMapRef.current.remove();
+      leafletMapRef.current = null;
+      markerRef.current = null;
+    }
+    setAddressForm({
+      label: "Home",
+      fullName: user?.firstName && user?.familyName ? `${user.firstName} ${user.familyName}` : "",
+      mobile: user?.mobile || "",
+      emirate: user?.emirate || "",
+      area: "",
+      street: "",
+      building: "",
+      floor: "",
+      apartment: "",
+      isDefault: false,
+      latitude: undefined,
+      longitude: undefined,
+    });
+    setShowAddressForm(false);
+  };
+
   // Save address handler
   const handleSaveAddress = () => {
     if (!addressForm.fullName || !addressForm.mobile || !addressForm.emirate || !addressForm.area || !addressForm.street || !addressForm.building) {
@@ -260,20 +284,8 @@ export default function ProfilePage() {
       localStorage.setItem(`addresses_${user.id}`, JSON.stringify(updatedAddresses));
     }
     
-    // Reset form and hide it
-    setAddressForm({
-      label: "Home",
-      fullName: user?.firstName && user?.familyName ? `${user.firstName} ${user.familyName}` : "",
-      mobile: user?.mobile || "",
-      emirate: user?.emirate || "",
-      area: "",
-      street: "",
-      building: "",
-      floor: "",
-      apartment: "",
-      isDefault: false,
-    });
-    setShowAddressForm(false);
+    // Cleanup map and close form
+    closeAddressForm();
   };
 
   // Delete address handler
@@ -689,7 +701,7 @@ export default function ProfilePage() {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-semibold text-foreground">{t.addNewAddress}</h3>
                       <button
-                        onClick={() => setShowAddressForm(false)}
+                        onClick={closeAddressForm}
                         className="p-1 hover:bg-muted rounded-full transition-colors"
                       >
                         <X className="w-5 h-5 text-muted-foreground" />
@@ -875,7 +887,7 @@ export default function ProfilePage() {
                         {t.saveAddress}
                       </button>
                       <button
-                        onClick={() => setShowAddressForm(false)}
+                        onClick={closeAddressForm}
                         className="btn-outline flex-1"
                       >
                         {t.cancel}
