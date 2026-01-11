@@ -195,15 +195,19 @@ const CATEGORY_IMAGES: Record<string, string> = {
   premium: "https://images.unsplash.com/photo-1615937657715-bc7b4b7962c1?w=400&h=300&fit=crop", // Premium raw meat
 };
 
-// Helper function to ensure product has an image
+// Version number - increment this when images/prices are updated to force refresh
+const PRODUCTS_VERSION = 2;
+
+// Helper function to ensure product has the correct image from INITIAL_PRODUCTS
 const ensureProductImage = (product: Product): Product => {
-  if (product.image) return product;
-  
-  // Try to get default image by product ID
+  // For known product IDs, always use the default image to ensure consistency
   const defaultImage = DEFAULT_IMAGES[product.id];
   if (defaultImage) {
     return { ...product, image: defaultImage };
   }
+  
+  // For products with existing images, keep them
+  if (product.image) return product;
   
   // Fallback to category-based image
   const categoryImage = CATEGORY_IMAGES[product.category.toLowerCase()];
@@ -215,17 +219,44 @@ const ensureProductImage = (product: Product): Product => {
   return { ...product, image: CATEGORY_IMAGES.beef };
 };
 
+// Helper to merge saved products with INITIAL_PRODUCTS (for prices/images updates)
+const mergeWithInitialProducts = (savedProducts: Product[]): Product[] => {
+  const initialProductsMap = new Map(INITIAL_PRODUCTS.map(p => [p.id, p]));
+  
+  return savedProducts.map(saved => {
+    const initial = initialProductsMap.get(saved.id);
+    if (initial) {
+      // Merge: use initial product's image and price, but keep saved product's other data
+      return {
+        ...saved,
+        image: initial.image,
+        price: initial.price,
+      };
+    }
+    return ensureProductImage(saved);
+  });
+};
+
 export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Initialize with INITIAL_PRODUCTS for consistency across all platforms
   const [products, setProducts] = useState<Product[]>(() => {
+    // Check version - if outdated, clear localStorage and use fresh data
+    const savedVersion = localStorage.getItem("butcher_products_version");
+    if (!savedVersion || parseInt(savedVersion) < PRODUCTS_VERSION) {
+      // Version mismatch - use fresh INITIAL_PRODUCTS
+      localStorage.setItem("butcher_products_version", PRODUCTS_VERSION.toString());
+      localStorage.setItem("butcher_products", JSON.stringify(INITIAL_PRODUCTS));
+      return INITIAL_PRODUCTS;
+    }
+    
     // Try to load from localStorage first (works on both web and Capacitor WebView)
     try {
       const saved = localStorage.getItem("butcher_products");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          // Ensure all products have images
-          return parsed.map(ensureProductImage);
+          // Merge with initial products to ensure correct images and prices
+          return mergeWithInitialProducts(parsed);
         }
       }
     } catch {
