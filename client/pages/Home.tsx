@@ -24,6 +24,7 @@ import { useBasket, BasketItem } from "@/context/BasketContext";
 import { cn } from "@/lib/utils";
 import ProductCard from "@/components/ProductCard";
 import { PRODUCT_CATEGORIES } from "@shared/categories";
+import { CurrencySymbol } from "@/components/CurrencySymbol";
 
 // Banner Carousel Component
 interface Banner {
@@ -54,8 +55,8 @@ const banners: Banner[] = [
     id: "2",
     titleEn: "Free Delivery",
     titleAr: "توصيل مجاني",
-    subtitleEn: "On orders above AED 1000",
-    subtitleAr: "للطلبات فوق 1000 درهم",
+    subtitleEn: "On orders above {CURRENCY} 1000",
+    subtitleAr: "للطلبات فوق {CURRENCY} 1000",
     image: "/photos/delivery.jpg",
     bgColor: "from-blue-600 to-blue-800",
     link: "/products",
@@ -234,7 +235,15 @@ export default function HomePage() {
                         {isRTL ? banner.titleAr : banner.titleEn}
                       </h2>
                       <p className="text-sm md:text-base opacity-90">
-                        {isRTL ? banner.subtitleAr : banner.subtitleEn}
+                        {(isRTL ? banner.subtitleAr : banner.subtitleEn).includes("{CURRENCY}") ? (
+                          <>
+                            {(isRTL ? banner.subtitleAr : banner.subtitleEn).split("{CURRENCY}")[0]}
+                            <CurrencySymbol size="sm" className="inline-block mx-1" />
+                            {(isRTL ? banner.subtitleAr : banner.subtitleEn).split("{CURRENCY}")[1]}
+                          </>
+                        ) : (
+                          isRTL ? banner.subtitleAr : banner.subtitleEn
+                        )}
                       </p>
                       <span className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-white text-gray-900 rounded-full font-medium text-sm hover:bg-gray-100 transition-colors">
                         {tt.shopNow}
