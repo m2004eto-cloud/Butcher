@@ -27,29 +27,36 @@ const WishlistContext = createContext<WishlistContextType | undefined>(undefined
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [items, setItems] = useState<WishlistItem[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Get storage key based on user
+  const getStorageKey = useCallback(() => {
+    return user?.id ? `wishlist_${user.id}` : 'wishlist_guest';
+  }, [user?.id]);
 
   // Load wishlist from localStorage on mount or user change
   useEffect(() => {
-    if (user?.id) {
-      const saved = localStorage.getItem(`wishlist_${user.id}`);
-      if (saved) {
-        try {
-          setItems(JSON.parse(saved));
-        } catch {
-          setItems([]);
-        }
+    const storageKey = getStorageKey();
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        setItems(JSON.parse(saved));
+      } catch {
+        setItems([]);
       }
     } else {
       setItems([]);
     }
-  }, [user?.id]);
+    setIsInitialized(true);
+  }, [getStorageKey]);
 
-  // Save to localStorage whenever items change
+  // Save to localStorage whenever items change (only after initialization)
   useEffect(() => {
-    if (user?.id) {
-      localStorage.setItem(`wishlist_${user.id}`, JSON.stringify(items));
+    if (isInitialized) {
+      const storageKey = getStorageKey();
+      localStorage.setItem(storageKey, JSON.stringify(items));
     }
-  }, [items, user?.id]);
+  }, [items, getStorageKey, isInitialized]);
 
   const isInWishlist = useCallback((productId: string) => {
     return items.some((item) => item.productId === productId);
