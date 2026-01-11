@@ -27,7 +27,7 @@ import {
   Bell,
   FileText,
 } from "lucide-react";
-import { suppliersApi } from "@/lib/api";
+import { suppliersApi, stockApi } from "@/lib/api";
 import type {
   Supplier,
   SupplierStatus,
@@ -226,6 +226,27 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
     validationMessage: isRTL ? "يرجى ملء اسم المورد والبريد الإلكتروني والهاتف واسم جهة الاتصال الأساسية." : "Please fill in supplier name, email, phone, and primary contact name.",
     deleteConfirm: isRTL ? "هل تريد حذف المورد؟ لا يمكن التراجع عن هذا الإجراء إذا لم تكن هناك أوامر شراء معلقة." : "Delete supplier? This cannot be undone if no pending POs.",
     
+    // Edit supplier
+    editSupplier: isRTL ? "تعديل المورد" : "Edit Supplier",
+    updateSupplier: isRTL ? "تحديث المورد" : "Update Supplier",
+    editSupplierDescription: isRTL ? "تحديث بيانات المورد." : "Update supplier information.",
+    
+    // PO actions
+    approve: isRTL ? "موافقة" : "Approve",
+    sendOrder: isRTL ? "إرسال الطلب" : "Send Order",
+    receive: isRTL ? "استلام" : "Receive",
+    cancelPO: isRTL ? "إلغاء" : "Cancel",
+    receiveItems: isRTL ? "استلام البضائع" : "Receive Items",
+    receiveItemsDesc: isRTL ? "أدخل الكميات المستلمة لكل صنف" : "Enter received quantities for each item",
+    receivedQty: isRTL ? "الكمية المستلمة" : "Received Qty",
+    confirmReceive: isRTL ? "تأكيد الاستلام" : "Confirm Receive",
+    selectProduct: isRTL ? "اختر المنتج" : "Select Product",
+    remaining: isRTL ? "المتبقي" : "Remaining",
+    fullyReceived: isRTL ? "مستلم بالكامل" : "Fully Received",
+    partiallyReceived: isRTL ? "مستلم جزئياً" : "Partially Received",
+    receiveNow: isRTL ? "استلام الآن" : "Receive now",
+    maxQty: isRTL ? "الحد الأقصى" : "max",
+    
     // Payment labels
     net7: isRTL ? "صافي 7 أيام" : "Net 7",
     net15: isRTL ? "صافي 15 يوم" : "Net 15",
@@ -263,7 +284,10 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [showPoForm, setShowPoForm] = useState(false);
+  const [showReceiveModal, setShowReceiveModal] = useState<PurchaseOrder | null>(null);
+  const [receiveQuantities, setReceiveQuantities] = useState<Record<string, number>>({});
   const [poItems, setPoItems] = useState<PurchaseOrderDraftItem[]>([{ productId: "", quantity: 0, unitCost: 0 }]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [form, setForm] = useState<SupplierFormState>({
@@ -402,6 +426,7 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
     if (res.success && res.data) {
       setShowForm(false);
       resetForm();
+      setEditMode(false);
       await fetchSuppliers();
       setSelected(res.data);
       await loadSupplierRelations(res.data.id);
@@ -409,6 +434,106 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
       alert(res.error);
     }
     setCreating(false);
+  };
+
+  const handleEditSupplier = () => {
+    if (!selected) return;
+    setForm({
+      name: selected.name,
+      nameAr: selected.nameAr || "",
+      email: selected.email,
+      phone: selected.phone,
+      website: selected.website || "",
+      taxNumber: selected.taxNumber || "",
+      paymentTerms: selected.paymentTerms,
+      currency: selected.currency,
+      creditLimit: selected.creditLimit,
+      categories: selected.categories,
+      notes: selected.notes || "",
+      address: { ...selected.address },
+      contacts: selected.contacts.map(c => ({ name: c.name, position: c.position, email: c.email, phone: c.phone, isPrimary: c.isPrimary })),
+    });
+    setEditMode(true);
+    setShowForm(true);
+  };
+
+  const handleUpdateSupplier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selected || creating) return;
+    if (!form.name || !form.email || !form.phone) {
+      alert(t.validationMessage);
+      return;
+    }
+    setCreating(true);
+    const res = await suppliersApi.update(selected.id, {
+      name: form.name,
+      nameAr: form.nameAr || undefined,
+      email: form.email,
+      phone: form.phone,
+      website: form.website || undefined,
+      taxNumber: form.taxNumber || undefined,
+      paymentTerms: form.paymentTerms,
+      currency: form.currency,
+      creditLimit: form.creditLimit,
+      categories: form.categories.length ? form.categories : ["general"],
+      notes: form.notes || undefined,
+      address: form.address,
+    });
+    if (res.success && res.data) {
+      setShowForm(false);
+      resetForm();
+      setEditMode(false);
+      await refreshSelection(selected.id);
+    } else if (!res.success && res.error) {
+      alert(res.error);
+    }
+    setCreating(false);
+  };
+
+  const handleReceivePO = async (po: PurchaseOrder, itemsToReceive: { itemId: string; receivedQuantity: number }[]) => {
+    const res = await suppliersApi.receivePurchaseOrderItems(po.id, itemsToReceive);
+    if (res.success) {
+      // Update stock levels for each received item
+      for (const item of itemsToReceive) {
+        const poItem = po.items.find(i => i.id === item.itemId);
+        if (poItem && poItem.productId) {
+          await stockApi.update(
+            poItem.productId,
+            item.receivedQuantity,
+            "in",
+            `Received from PO ${po.orderNumber}`
+          );
+        }
+      }
+      setShowReceiveModal(null);
+      setReceiveQuantities({});
+      if (selected) {
+        await loadSupplierRelations(selected.id);
+      }
+      await fetchSuppliers();
+    }
+  };
+
+  const handleApprovePO = async (po: PurchaseOrder) => {
+    const res = await suppliersApi.updatePurchaseOrderStatus(po.id, "approved", "Approved by admin");
+    if (res.success && selected) {
+      await loadSupplierRelations(selected.id);
+    }
+  };
+
+  const handleSendPO = async (po: PurchaseOrder) => {
+    const res = await suppliersApi.updatePurchaseOrderStatus(po.id, "ordered", "Order sent to supplier");
+    if (res.success && selected) {
+      await loadSupplierRelations(selected.id);
+    }
+  };
+
+  const handleCancelPO = async (po: PurchaseOrder) => {
+    if (!window.confirm(isRTL ? "هل تريد إلغاء أمر الشراء؟" : "Cancel this purchase order?")) return;
+    const res = await suppliersApi.cancelPurchaseOrder(po.id);
+    if (res.success && selected) {
+      await loadSupplierRelations(selected.id);
+    }
   };
 
   const handleStatusChange = async (status: SupplierStatus) => {
@@ -738,7 +863,12 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
                     <button disabled={selected.status === "active"} onClick={() => handleStatusChange("active")} className={cn("px-3 py-1 text-xs rounded-lg", selected.status === "active" ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-green-100 text-green-700")}>{t.activate}</button>
                     <button disabled={selected.status === "suspended"} onClick={() => handleStatusChange("suspended")} className={cn("px-3 py-1 text-xs rounded-lg", selected.status === "suspended" ? "bg-slate-100 text-slate-400 cursor-not-allowed" : "bg-red-100 text-red-700")}>{t.suspend}</button>
                   </div>
-                  <button onClick={handleDelete} className="px-3 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-red-50">{t.delete}</button>
+                  <div className="flex gap-2">
+                    <button onClick={handleEditSupplier} className="px-3 py-1 text-xs rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 flex items-center gap-1">
+                      <Pencil className="w-3 h-3" /> {t.editSupplier}
+                    </button>
+                    <button onClick={handleDelete} className="px-3 py-1 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-red-50">{t.delete}</button>
+                  </div>
                 </div>
               </div>
 
@@ -792,14 +922,46 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
               </div>
               <div className="space-y-2">
                 {purchaseOrders.map((po) => (
-                  <div key={po.id} className="border border-slate-200 rounded-lg p-3 flex justify-between items-center">
-                    <div>
-                      <div className="font-semibold">{po.orderNumber}</div>
-                      <div className="text-xs text-slate-500">{po.items.length} {t.items} · {formatCurrency(po.total)} · {po.status}</div>
+                  <div key={po.id} className="border border-slate-200 rounded-lg p-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-semibold">{po.orderNumber}</div>
+                        <div className="text-xs text-slate-500">{po.items.length} {t.items} · {formatCurrency(po.total)}</div>
+                      </div>
+                      <div className={cn("text-xs text-slate-500", isRTL ? "text-left" : "text-right")}>
+                        <div>{formatDate(po.orderDate)}</div>
+                        <div className={cn("font-medium px-2 py-0.5 rounded-full text-xs inline-block mt-1", 
+                          po.status === "draft" ? "bg-slate-100 text-slate-700" :
+                          po.status === "approved" ? "bg-blue-100 text-blue-700" :
+                          po.status === "pending" ? "bg-yellow-100 text-yellow-700" :
+                          po.status === "ordered" ? "bg-purple-100 text-purple-700" :
+                          po.status === "partially_received" ? "bg-orange-100 text-orange-700" :
+                          po.status === "received" ? "bg-green-100 text-green-700" :
+                          "bg-red-100 text-red-700"
+                        )}>{po.status}</div>
+                      </div>
                     </div>
-                    <div className={cn("text-xs text-slate-500", isRTL ? "text-left" : "text-right")}>
-                      <div>{formatDate(po.orderDate)}</div>
-                      <div className="font-medium text-slate-700">{po.status}</div>
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      {po.status === "draft" && (
+                        <button onClick={() => handleApprovePO(po)} className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700 hover:bg-blue-200 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> {t.approve}
+                        </button>
+                      )}
+                      {(po.status === "approved" || po.status === "pending") && (
+                        <button onClick={() => handleSendPO(po)} className="px-2 py-1 text-xs rounded bg-purple-100 text-purple-700 hover:bg-purple-200 flex items-center gap-1">
+                          <Truck className="w-3 h-3" /> {t.sendOrder}
+                        </button>
+                      )}
+                      {(po.status === "ordered" || po.status === "partially_received") && (
+                        <button onClick={() => setShowReceiveModal(po)} className="px-2 py-1 text-xs rounded bg-green-100 text-green-700 hover:bg-green-200 flex items-center gap-1">
+                          <Package className="w-3 h-3" /> {t.receive}
+                        </button>
+                      )}
+                      {po.status !== "received" && po.status !== "cancelled" && (
+                        <button onClick={() => handleCancelPO(po)} className="px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200 flex items-center gap-1">
+                          <Ban className="w-3 h-3" /> {t.cancelPO}
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -849,12 +1011,12 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
             <div className="p-4 border-b border-slate-200 flex items-center justify-between">
               <div>
-                <h4 className="text-lg font-semibold text-slate-900">{t.newSupplierTitle}</h4>
-                <p className="text-sm text-slate-500">{t.newSupplierDescription}</p>
+                <h4 className="text-lg font-semibold text-slate-900">{editMode ? t.editSupplier : t.newSupplierTitle}</h4>
+                <p className="text-sm text-slate-500">{editMode ? t.editSupplierDescription : t.newSupplierDescription}</p>
               </div>
-              <button onClick={() => setShowForm(false)} className="p-2 hover:bg-slate-100 rounded-lg"><Ban className="w-5 h-5" /></button>
+              <button onClick={() => { setShowForm(false); setEditMode(false); resetForm(); }} className="p-2 hover:bg-slate-100 rounded-lg"><Ban className="w-5 h-5" /></button>
             </div>
-            <form onSubmit={handleCreateSupplier} className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto">
+            <form onSubmit={editMode ? handleUpdateSupplier : handleCreateSupplier} className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto">
               <Input label={t.supplierName} required value={form.name} onChange={(v) => setForm((f) => ({ ...f, name: v }))} />
               <Input label={t.arabicName} value={form.nameAr || ""} onChange={(v) => setForm((f) => ({ ...f, nameAr: v }))} />
               <Input label={t.email} required value={form.email} onChange={(v) => setForm((f) => ({ ...f, email: v }))} />
@@ -891,9 +1053,9 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
                 </div>
               </div>
               <div className="md:col-span-2 flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 border border-slate-300 rounded-lg">{t.cancel}</button>
+                <button type="button" onClick={() => { setShowForm(false); setEditMode(false); resetForm(); }} className="px-4 py-2 border border-slate-300 rounded-lg">{t.cancel}</button>
                 <button type="submit" disabled={creating} className="px-4 py-2 bg-primary text-white rounded-lg flex items-center gap-2">
-                  {creating && <Loader2 className="w-4 h-4 animate-spin" />}{t.createSupplier}
+                  {creating && <Loader2 className="w-4 h-4 animate-spin" />}{editMode ? t.updateSupplier : t.createSupplier}
                 </button>
               </div>
             </form>
@@ -914,10 +1076,42 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
             <form onSubmit={handleCreatePO} className="p-4 space-y-3 max-h-[70vh] overflow-y-auto">
               {poItems.map((item, idx) => (
                 <div key={idx} className="grid grid-cols-1 md:grid-cols-4 gap-3 border border-slate-200 rounded-lg p-3">
-                  <Input label={t.productId} value={item.productId} onChange={(v) => setPoItems((arr) => arr.map((it, i) => i === idx ? { ...it, productId: v } : it))} />
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-slate-500">{t.selectProduct}</span>
+                    <select
+                      value={item.productId}
+                      onChange={(e) => {
+                        const selectedProduct = products.find(p => p.productId === e.target.value);
+                        setPoItems((arr) => arr.map((it, i) => i === idx ? { 
+                          ...it, 
+                          productId: e.target.value,
+                          unitCost: selectedProduct?.unitCost || it.unitCost
+                        } : it));
+                      }}
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm"
+                    >
+                      <option value="">{t.selectProduct}...</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.productId}>{p.productName} ({p.supplierSku || p.productId})</option>
+                      ))}
+                    </select>
+                  </div>
                   <Input label={t.quantityG} type="number" value={item.quantity.toString()} onChange={(v) => setPoItems((arr) => arr.map((it, i) => i === idx ? { ...it, quantity: Number(v) } : it))} />
                   <Input label={t.unitCostPerKgLabel} type="number" value={item.unitCost.toString()} onChange={(v) => setPoItems((arr) => arr.map((it, i) => i === idx ? { ...it, unitCost: Number(v) } : it))} />
-                  <Input label={t.notes} value={item.notes || ""} onChange={(v) => setPoItems((arr) => arr.map((it, i) => i === idx ? { ...it, notes: v } : it))} />
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Input label={t.notes} value={item.notes || ""} onChange={(v) => setPoItems((arr) => arr.map((it, i) => i === idx ? { ...it, notes: v } : it))} />
+                    </div>
+                    {poItems.length > 1 && (
+                      <button 
+                        type="button" 
+                        onClick={() => setPoItems((arr) => arr.filter((_, i) => i !== idx))}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg mb-0.5"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
               <div className="flex justify-between">
@@ -930,6 +1124,81 @@ export function SuppliersTab({ onNavigate }: SuppliersTabProps) {
                 <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg">{t.createPO}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showReceiveModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden" dir={isRTL ? 'rtl' : 'ltr'}>
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <h4 className="text-lg font-semibold text-slate-900">{t.receiveItems}</h4>
+                <p className="text-sm text-slate-500">{showReceiveModal.orderNumber} - {t.receiveItemsDesc}</p>
+              </div>
+              <button onClick={() => { setShowReceiveModal(null); setReceiveQuantities({}); }} className="p-2 hover:bg-slate-100 rounded-lg"><Ban className="w-5 h-5" /></button>
+            </div>
+            <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto">
+              {showReceiveModal.items.map((item) => {
+                const remaining = item.quantity - (item.receivedQuantity || 0);
+                return (
+                  <div key={item.id} className="border border-slate-200 rounded-lg p-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <div className="font-semibold text-slate-900">{item.productName || item.productId}</div>
+                        <div className="text-xs text-slate-500">{t.quantityG}: {item.quantity}g · {t.receivedQty}: {item.receivedQuantity || 0}g · {t.remaining}: {remaining}g</div>
+                      </div>
+                      <div className={cn("px-2 py-0.5 rounded-full text-xs", 
+                        item.receivedQuantity === item.quantity ? "bg-green-100 text-green-700" :
+                        (item.receivedQuantity || 0) > 0 ? "bg-orange-100 text-orange-700" :
+                        "bg-slate-100 text-slate-700"
+                      )}>
+                        {item.receivedQuantity === item.quantity ? t.fullyReceived : (item.receivedQuantity || 0) > 0 ? t.partiallyReceived : t.pending}
+                      </div>
+                    </div>
+                    {remaining > 0 && (
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm text-slate-600">{t.receiveNow}:</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max={remaining}
+                          value={receiveQuantities[item.id] || ""}
+                          onChange={(e) => setReceiveQuantities(prev => ({ ...prev, [item.id]: Math.min(Number(e.target.value), remaining) }))}
+                          className="w-24 px-2 py-1 border border-slate-300 rounded text-sm"
+                          placeholder="0"
+                        />
+                        <span className="text-xs text-slate-500">g ({t.maxQty}: {remaining}g)</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="p-4 border-t border-slate-200 flex justify-end gap-3">
+              <button 
+                type="button" 
+                onClick={() => { setShowReceiveModal(null); setReceiveQuantities({}); }} 
+                className="px-4 py-2 border border-slate-300 rounded-lg"
+              >
+                {t.cancel}
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  const itemsToReceive = Object.entries(receiveQuantities)
+                    .filter(([, qty]) => qty > 0)
+                    .map(([itemId, receivedQuantity]) => ({ itemId, receivedQuantity }));
+                  if (itemsToReceive.length > 0) {
+                    handleReceivePO(showReceiveModal, itemsToReceive);
+                  }
+                }}
+                disabled={Object.values(receiveQuantities).every(q => !q || q <= 0)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <Package className="w-4 h-4" /> {t.confirmReceive}
+              </button>
+            </div>
           </div>
         </div>
       )}
