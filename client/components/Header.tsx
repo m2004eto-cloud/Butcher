@@ -685,9 +685,14 @@ export const Header: React.FC<HeaderProps> = ({ showBasketIcon = true }) => {
                 )}
               </div>
             ) : (
-              <Link to="/" className="btn-primary text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5">
-                {t("login.loginLink")}
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link to="/login" className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5 text-primary hover:text-primary/80 font-medium">
+                  {language === "ar" ? "دخول" : "Login"}
+                </Link>
+                <Link to="/register" className="btn-primary text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1.5">
+                  {language === "ar" ? "تسجيل" : "Register"}
+                </Link>
+              </div>
             )}
           </div>
         </div>

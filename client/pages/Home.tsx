@@ -76,7 +76,7 @@ export default function HomePage() {
   const { language } = useLanguage();
   const { products } = useProducts();
   const { orders } = useOrders();
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
   const { addItem } = useBasket();
   const navigate = useNavigate();
   const isRTL = language === "ar";
@@ -92,6 +92,9 @@ export default function HomePage() {
   const handleLoginRequired = () => {
     navigate("/login");
   };
+
+  // Check if user is a visitor (not logged in)
+  const isVisitor = !isLoggedIn;
 
   // Auto-rotate banners
   useEffect(() => {
@@ -368,7 +371,7 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {dealsProducts.map((product) => (
-                <ProductCard key={product.id} product={product} compact onAddToBasket={handleAddToBasket} />
+                <ProductCard key={product.id} product={product} compact onAddToBasket={handleAddToBasket} isVisitor={isVisitor} onLoginRequired={handleLoginRequired} />
               ))}
             </div>
           </section>
@@ -397,7 +400,7 @@ export default function HomePage() {
               {reorderItems.map((item) => {
                 const product = products.find((p) => p.id === item.id);
                 return product ? (
-                  <ProductCard key={item.id} product={product} onAddToBasket={handleAddToBasket} />
+                  <ProductCard key={item.id} product={product} onAddToBasket={handleAddToBasket} isVisitor={isVisitor} onLoginRequired={handleLoginRequired} />
                 ) : null;
               })}
             </div>
@@ -421,7 +424,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {bestSellers.map((product) => (
-              <ProductCard key={product.id} product={product} onAddToBasket={handleAddToBasket} />
+              <ProductCard key={product.id} product={product} onAddToBasket={handleAddToBasket} isVisitor={isVisitor} onLoginRequired={handleLoginRequired} />
             ))}
           </div>
         </section>
@@ -443,7 +446,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {newArrivals.map((product) => (
-              <ProductCard key={product.id} product={product} onAddToBasket={handleAddToBasket} />
+              <ProductCard key={product.id} product={product} onAddToBasket={handleAddToBasket} isVisitor={isVisitor} onLoginRequired={handleLoginRequired} />
             ))}
           </div>
         </section>

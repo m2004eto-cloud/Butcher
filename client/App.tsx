@@ -65,8 +65,10 @@ const App = () => {
                               <Sonner />
                               <BrowserRouter>
                                 <Routes>
+                                  {/* Homepage - Default landing page */}
+                                  <Route path="/" element={<Layout><Home /></Layout>} />
+                                  
                                   {/* Auth Routes - No header/footer */}
-                                  <Route path="/" element={<Login />} />
                                   <Route path="/login" element={<Login />} />
                                   <Route path="/register" element={<Register />} />
                                   <Route path="/forgot-password" element={<ForgotPassword />} />
