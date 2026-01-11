@@ -40,6 +40,7 @@ const INITIAL_PRODUCTS: Product[] = [
     category: "Beef",
     description: "Aged premium ribeye steak, perfect for grilling",
     descriptionAr: "ستيك ريب آي معتق ممتاز، مثالي للشوي",
+    image: "https://images.unsplash.com/photo-1600891964092-4316c288032e?w=400&h=300&fit=crop",
     available: true,
     discount: 15,
     rating: 4.8,
@@ -53,6 +54,7 @@ const INITIAL_PRODUCTS: Product[] = [
     category: "Lamb",
     description: "Fresh lamb chops, ideal for Mediterranean cuisine",
     descriptionAr: "ريش لحم ضأن طازجة، مثالية للمطبخ المتوسطي",
+    image: "https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=400&h=300&fit=crop",
     available: true,
     discount: 10,
     rating: 4.6,
@@ -66,6 +68,7 @@ const INITIAL_PRODUCTS: Product[] = [
     category: "Goat",
     description: "Whole goat leg, perfect for traditional dishes",
     descriptionAr: "فخذ ماعز كامل، مثالي للأطباق التقليدية",
+    image: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop",
     available: true,
     discount: 20,
     rating: 4.9,
@@ -79,6 +82,7 @@ const INITIAL_PRODUCTS: Product[] = [
     category: "Chicken",
     description: "Boneless, skinless chicken breasts - versatile and healthy",
     descriptionAr: "صدور دجاج بدون عظم وجلد - متعددة الاستخدامات وصحية",
+    image: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&h=300&fit=crop",
     available: true,
     rating: 4.5,
     badges: ["halal", "fresh"],
@@ -91,6 +95,7 @@ const INITIAL_PRODUCTS: Product[] = [
     category: "Beef",
     description: "Lean ground beef for burgers and meatballs",
     descriptionAr: "لحم بقري مفروم قليل الدهن للبرغر وكرات اللحم",
+    image: "https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400&h=300&fit=crop",
     available: true,
     discount: 5,
     rating: 4.4,
@@ -104,6 +109,7 @@ const INITIAL_PRODUCTS: Product[] = [
     category: "Beef",
     description: "Slow-cooked perfection for your BBQ",
     descriptionAr: "مثالي للطهي البطيء والشواء",
+    image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop",
     available: true,
     rating: 4.7,
     badges: ["halal", "grass-fed"],
@@ -116,6 +122,7 @@ const INITIAL_PRODUCTS: Product[] = [
     category: "Lamb",
     description: "Whole lamb leg, perfect for family dinners",
     descriptionAr: "فخذ ضأن كامل، مثالي لعشاء العائلة",
+    image: "https://images.unsplash.com/photo-1608039829572-ffbd6f3cdb84?w=400&h=300&fit=crop",
     available: false,
     rating: 4.6,
     badges: ["halal", "premium"],
@@ -128,6 +135,7 @@ const INITIAL_PRODUCTS: Product[] = [
     category: "Goat",
     description: "Premium goat ribs, perfect for grilling",
     descriptionAr: "ريش ماعز ممتازة، مثالية للشوي",
+    image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=300&fit=crop",
     available: true,
     discount: 25,
     rating: 4.8,
@@ -141,6 +149,7 @@ const INITIAL_PRODUCTS: Product[] = [
     category: "Beef",
     description: "Premium Australian Wagyu A5, melt-in-your-mouth texture",
     descriptionAr: "واغيو أسترالي ممتاز A5، قوام يذوب في الفم",
+    image: "https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=300&fit=crop",
     available: true,
     discount: 30,
     rating: 5.0,
@@ -154,11 +163,57 @@ const INITIAL_PRODUCTS: Product[] = [
     category: "Chicken",
     description: "Free-range organic chicken thighs, extra juicy",
     descriptionAr: "أفخاذ دجاج عضوي حر، طرية وغنية بالعصارة",
+    image: "https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&h=300&fit=crop",
     available: true,
     rating: 4.7,
     badges: ["organic", "halal", "fresh"],
   },
 ];
+
+// Create a map of default images by product id
+const DEFAULT_IMAGES: Record<string, string> = {
+  prod_1: "https://images.unsplash.com/photo-1600891964092-4316c288032e?w=400&h=300&fit=crop",
+  prod_2: "https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=400&h=300&fit=crop",
+  prod_3: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&h=300&fit=crop",
+  prod_4: "https://images.unsplash.com/photo-1602470520998-f4a52199a3d6?w=400&h=300&fit=crop",
+  prod_5: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop",
+  prod_6: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop",
+  prod_7: "https://images.unsplash.com/photo-1608039829572-ffbd6f3cdb84?w=400&h=300&fit=crop",
+  prod_8: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=300&fit=crop",
+  prod_9: "https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=300&fit=crop",
+  prod_10: "https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400&h=300&fit=crop",
+};
+
+// Category-based fallback images
+const CATEGORY_IMAGES: Record<string, string> = {
+  beef: "https://images.unsplash.com/photo-1600891964092-4316c288032e?w=400&h=300&fit=crop",
+  lamb: "https://images.unsplash.com/photo-1603048297172-c92544798d5a?w=400&h=300&fit=crop",
+  chicken: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&h=300&fit=crop",
+  goat: "https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400&h=300&fit=crop",
+  sheep: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=300&fit=crop",
+  marinated: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400&h=300&fit=crop",
+  premium: "https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=300&fit=crop",
+};
+
+// Helper function to ensure product has an image
+const ensureProductImage = (product: Product): Product => {
+  if (product.image) return product;
+  
+  // Try to get default image by product ID
+  const defaultImage = DEFAULT_IMAGES[product.id];
+  if (defaultImage) {
+    return { ...product, image: defaultImage };
+  }
+  
+  // Fallback to category-based image
+  const categoryImage = CATEGORY_IMAGES[product.category.toLowerCase()];
+  if (categoryImage) {
+    return { ...product, image: categoryImage };
+  }
+  
+  // Final fallback - use beef image
+  return { ...product, image: CATEGORY_IMAGES.beef };
+};
 
 export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Initialize with INITIAL_PRODUCTS for consistency across all platforms
@@ -169,7 +224,8 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Ensure all products have images
+          return parsed.map(ensureProductImage);
         }
       }
     } catch {
