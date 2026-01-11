@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
 import { useProducts, Product } from "@/context/ProductsContext";
+import { PRODUCT_CATEGORIES, getCategoryName } from "@shared/categories";
 
 interface AdminTabProps {
   onNavigate?: (tab: string, id?: string) => void;
@@ -71,7 +72,7 @@ export function ProductsTab({ onNavigate }: AdminTabProps) {
     selectCategory: isRTL ? "اختر الفئة" : "Select Category",
     beef: isRTL ? "لحم بقري" : "Beef",
     lamb: isRTL ? "لحم ضأن" : "Lamb",
-    sheep: isRTL ? "لحم خروف" : "Sheep",
+    mutton: isRTL ? "لحم خروف" : "Mutton",
     chicken: isRTL ? "دجاج" : "Chicken",
     other: isRTL ? "أخرى" : "Other",
     uploadImage: isRTL ? "رفع صورة" : "Upload Image",
@@ -90,8 +91,8 @@ export function ProductsTab({ onNavigate }: AdminTabProps) {
   const [deleteModal, setDeleteModal] = useState<Product | null>(null);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
-  // Get unique categories
-  const categories = Array.from(new Set(products.map((p) => p.category))).sort();
+  // Use shared categories for the filter dropdown
+  const filterCategories = PRODUCT_CATEGORIES;
 
   // Filter products
   const filteredProducts = products.filter((product) => {
@@ -182,9 +183,9 @@ export function ProductsTab({ onNavigate }: AdminTabProps) {
               className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none bg-white min-w-[150px]"
             >
               <option value="all">{t.allCategories}</option>
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+              {filterCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {isRTL ? cat.nameAr : cat.nameEn}
                 </option>
               ))}
             </select>
@@ -408,13 +409,11 @@ function ProductFormModal({ product, onClose, onSave, isRTL, t, mode }: ProductF
   const [available, setAvailable] = useState(product?.available ?? true);
   const [submitting, setSubmitting] = useState(false);
 
-  const categories = [
-    { value: "Beef", label: t.beef },
-    { value: "Lamb", label: t.lamb },
-    { value: "Sheep", label: t.sheep },
-    { value: "Chicken", label: t.chicken },
-    { value: "Other", label: t.other },
-  ];
+  // Use shared categories
+  const categories = PRODUCT_CATEGORIES.map(cat => ({
+    value: cat.id,
+    label: isRTL ? cat.nameAr : cat.nameEn,
+  }));
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

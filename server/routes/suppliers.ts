@@ -144,7 +144,7 @@ const suppliers: Supplier[] = [
     currency: "AED",
     creditLimit: 0,
     currentBalance: 0,
-    categories: ["sheep", "lamb"],
+    categories: ["mutton", "lamb"],
     rating: 4.0,
     onTimeDeliveryRate: 88,
     qualityScore: 90,

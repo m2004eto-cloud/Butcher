@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Search, SlidersHorizontal, ChevronDown, Grid, List, Star, Heart, X } from "lucide-react";
 import { ProductCard } from "@/components/ProductCard";
 import { useAuth } from "@/context/AuthContext";
@@ -10,6 +10,7 @@ import { useWishlist } from "@/context/WishlistContext";
 import { useReviews } from "@/context/ReviewsContext";
 import { PriceDisplay } from "@/components/CurrencySymbol";
 import { cn } from "@/lib/utils";
+import { PRODUCT_CATEGORIES, getCategoryName } from "@shared/categories";
 
 type SortOption = "default" | "price-low" | "price-high" | "rating" | "name";
 type ViewMode = "grid" | "list";
@@ -23,8 +24,11 @@ export default function ProductsPage() {
   const { products, refreshProducts } = useProducts();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { getProductRating } = useReviews();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  // Get initial category from URL params
+  const initialCategory = searchParams.get('category') || 'All';
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("default");
   const [showFilters, setShowFilters] = useState(false);
@@ -91,12 +95,24 @@ export default function ProductsPage() {
     };
   }, [refreshProducts]);
 
-  // Categories
-  const categoryOrder = ["All", "Beef", "Lamb", "Sheep", "Chicken"];
+  // Categories - use shared categories and filter to only those with products
   const productCategories = new Set(products.map((p) => p.category));
-  const categories = categoryOrder.filter(
-    (cat) => cat === "All" || productCategories.has(cat)
-  );
+  const categories = [
+    { id: "All", nameEn: "All", nameAr: "الكل" },
+    ...PRODUCT_CATEGORIES.filter(cat => productCategories.has(cat.id))
+  ];
+
+  // Sync category with URL params
+  useEffect(() => {
+    const urlCategory = searchParams.get('category');
+    if (urlCategory && urlCategory !== selectedCategory) {
+      // Check if it's a valid category
+      const validCat = categories.find(c => c.id.toLowerCase() === urlCategory.toLowerCase());
+      if (validCat) {
+        setSelectedCategory(validCat.id);
+      }
+    }
+  }, [searchParams]);
 
   // Get max price for range
   const maxPrice = useMemo(() => {
@@ -107,9 +123,9 @@ export default function ProductsPage() {
   const filteredProducts = useMemo(() => {
     let result = [...products];
 
-    // Category filter
+    // Category filter - case-insensitive match
     if (selectedCategory !== "All") {
-      result = result.filter((p) => p.category === selectedCategory);
+      result = result.filter((p) => p.category.toLowerCase() === selectedCategory.toLowerCase());
     }
 
     // Search filter
@@ -335,15 +351,23 @@ export default function ProductsPage() {
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-3 px-3 sm:mx-0 sm:px-0">
             {categories.map((category) => (
               <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
+                key={category.id}
+                onClick={() => {
+                  setSelectedCategory(category.id);
+                  if (category.id === 'All') {
+                    searchParams.delete('category');
+                  } else {
+                    searchParams.set('category', category.id);
+                  }
+                  setSearchParams(searchParams);
+                }}
                 className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-semibold whitespace-nowrap transition-all text-sm sm:text-base ${
-                  selectedCategory === category
+                  selectedCategory === category.id
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
-                {t(`category.${category.toLowerCase()}`)}
+                {isRTL ? category.nameAr : category.nameEn}
               </button>
             ))}
           </div>

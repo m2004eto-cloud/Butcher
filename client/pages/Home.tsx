@@ -23,6 +23,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useBasket, BasketItem } from "@/context/BasketContext";
 import { cn } from "@/lib/utils";
 import ProductCard from "@/components/ProductCard";
+import { PRODUCT_CATEGORIES } from "@shared/categories";
 
 // Banner Carousel Component
 interface Banner {
@@ -174,14 +175,8 @@ export default function HomePage() {
 
   const tt = t[language];
 
-  // Categories
-  const categories = [
-    { id: "beef", nameEn: "Beef", nameAr: "لحم بقري", icon: "🥩", color: "bg-red-100 text-red-600" },
-    { id: "lamb", nameEn: "Lamb", nameAr: "لحم ضأن", icon: "🍖", color: "bg-orange-100 text-orange-600" },
-    { id: "chicken", nameEn: "Chicken", nameAr: "دجاج", icon: "🍗", color: "bg-yellow-100 text-yellow-600" },
-    { id: "marinated", nameEn: "Marinated", nameAr: "متبل", icon: "🌿", color: "bg-green-100 text-green-600" },
-    { id: "premium", nameEn: "Premium", nameAr: "فاخر", icon: "⭐", color: "bg-purple-100 text-purple-600" },
-  ];
+  // Use shared categories from the centralized config
+  const categories = PRODUCT_CATEGORIES;
 
   // Get featured products (with discount or high rating)
   const dealsProducts = products
@@ -321,7 +316,7 @@ export default function HomePage() {
               <ChevronRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
             </Link>
           </div>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
             {categories.map((category) => (
               <Link
                 key={category.id}
