@@ -13,6 +13,7 @@ import reportsRouter from "./routes/reports";
 import analyticsRouter from "./routes/analytics";
 import productsRouter from "./routes/products";
 import suppliersRouter from "./routes/suppliers";
+import financeRouter from "./routes/finance";
 
 export function createServer() {
   const app = express();
@@ -133,6 +134,21 @@ export function createServer() {
   // Supplier Management
   // GET /api/suppliers - Suppliers, contacts, products, purchase orders
   app.use("/api/suppliers", suppliersRouter);
+
+  // Finance Management
+  // GET /api/finance/summary - Financial summary & dashboard
+  // GET /api/finance/transactions - List financial transactions
+  // GET /api/finance/accounts - List financial accounts
+  // POST /api/finance/accounts - Create account
+  // POST /api/finance/accounts/transfer - Transfer between accounts
+  // POST /api/finance/accounts/:id/reconcile - Reconcile account
+  // GET /api/finance/expenses - List expenses
+  // POST /api/finance/expenses - Create expense
+  // POST /api/finance/expenses/:id/pay - Mark expense as paid
+  // GET /api/finance/reports/profit-loss - Profit & Loss report
+  // GET /api/finance/reports/cash-flow - Cash flow report
+  // GET /api/finance/reports/vat - VAT report
+  app.use("/api/finance", financeRouter);
 
   return app;
 }

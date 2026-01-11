@@ -856,3 +856,156 @@ export const reportsApi = {
       body: JSON.stringify({ reportType, format, startDate, endDate }),
     }),
 };
+
+// =====================================================
+// FINANCE API
+// =====================================================
+
+import type {
+  FinanceTransaction,
+  FinanceAccount,
+  FinanceExpense,
+  FinanceSummary,
+  ProfitLossReport,
+  CashFlowReport,
+  VATReport,
+  CreateExpenseRequest,
+  TransactionType,
+  TransactionStatus,
+  ExpenseCategory,
+} from "@shared/api";
+
+export const financeApi = {
+  // Summary & Dashboard
+  getSummary: (params?: { period?: string; startDate?: string; endDate?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.period) searchParams.set("period", params.period);
+    if (params?.startDate) searchParams.set("startDate", params.startDate);
+    if (params?.endDate) searchParams.set("endDate", params.endDate);
+    return fetchApi<FinanceSummary>(`/finance/summary?${searchParams.toString()}`);
+  },
+
+  // Transactions
+  getTransactions: (params?: {
+    type?: TransactionType;
+    status?: TransactionStatus;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.type) searchParams.set("type", params.type);
+    if (params?.status) searchParams.set("status", params.status);
+    if (params?.startDate) searchParams.set("startDate", params.startDate);
+    if (params?.endDate) searchParams.set("endDate", params.endDate);
+    if (params?.page) searchParams.set("page", params.page.toString());
+    if (params?.limit) searchParams.set("limit", params.limit.toString());
+    return fetchApi<FinanceTransaction[]>(`/finance/transactions?${searchParams.toString()}`);
+  },
+
+  getTransactionById: (id: string) =>
+    fetchApi<FinanceTransaction>(`/finance/transactions/${id}`),
+
+  // Accounts
+  getAccounts: () => fetchApi<FinanceAccount[]>("/finance/accounts"),
+
+  getAccountById: (id: string) =>
+    fetchApi<FinanceAccount>(`/finance/accounts/${id}`),
+
+  createAccount: (data: Omit<FinanceAccount, "id" | "createdAt" | "updatedAt" | "balance">) =>
+    fetchApi<FinanceAccount>("/finance/accounts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updateAccount: (id: string, data: Partial<FinanceAccount>) =>
+    fetchApi<FinanceAccount>(`/finance/accounts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  transferBetweenAccounts: (fromAccountId: string, toAccountId: string, amount: number, notes?: string) =>
+    fetchApi<{ from: FinanceAccount; to: FinanceAccount }>("/finance/accounts/transfer", {
+      method: "POST",
+      body: JSON.stringify({ fromAccountId, toAccountId, amount, notes }),
+    }),
+
+  // Expenses
+  getExpenses: (params?: {
+    category?: ExpenseCategory;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.category) searchParams.set("category", params.category);
+    if (params?.status) searchParams.set("status", params.status);
+    if (params?.startDate) searchParams.set("startDate", params.startDate);
+    if (params?.endDate) searchParams.set("endDate", params.endDate);
+    if (params?.page) searchParams.set("page", params.page.toString());
+    if (params?.limit) searchParams.set("limit", params.limit.toString());
+    return fetchApi<FinanceExpense[]>(`/finance/expenses?${searchParams.toString()}`);
+  },
+
+  createExpense: (data: CreateExpenseRequest) =>
+    fetchApi<FinanceExpense>("/finance/expenses", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updateExpense: (id: string, data: Partial<FinanceExpense>) =>
+    fetchApi<FinanceExpense>(`/finance/expenses/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteExpense: (id: string) =>
+    fetchApi<null>(`/finance/expenses/${id}`, { method: "DELETE" }),
+
+  markExpensePaid: (id: string, accountId: string) =>
+    fetchApi<FinanceExpense>(`/finance/expenses/${id}/pay`, {
+      method: "POST",
+      body: JSON.stringify({ accountId }),
+    }),
+
+  // Reports
+  getProfitLoss: (params?: { period?: string; startDate?: string; endDate?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.period) searchParams.set("period", params.period);
+    if (params?.startDate) searchParams.set("startDate", params.startDate);
+    if (params?.endDate) searchParams.set("endDate", params.endDate);
+    return fetchApi<ProfitLossReport>(`/finance/reports/profit-loss?${searchParams.toString()}`);
+  },
+
+  getCashFlow: (params?: { period?: string; startDate?: string; endDate?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.period) searchParams.set("period", params.period);
+    if (params?.startDate) searchParams.set("startDate", params.startDate);
+    if (params?.endDate) searchParams.set("endDate", params.endDate);
+    return fetchApi<CashFlowReport>(`/finance/reports/cash-flow?${searchParams.toString()}`);
+  },
+
+  getVATReport: (params?: { period?: string; startDate?: string; endDate?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.period) searchParams.set("period", params.period);
+    if (params?.startDate) searchParams.set("startDate", params.startDate);
+    if (params?.endDate) searchParams.set("endDate", params.endDate);
+    return fetchApi<VATReport>(`/finance/reports/vat?${searchParams.toString()}`);
+  },
+
+  exportReport: (reportType: "profit-loss" | "cash-flow" | "vat" | "transactions", format: "pdf" | "csv" | "excel", startDate: string, endDate: string) =>
+    fetchApi<{ url: string; filename: string }>("/finance/reports/export", {
+      method: "POST",
+      body: JSON.stringify({ reportType, format, startDate, endDate }),
+    }),
+
+  // Reconciliation
+  reconcileAccount: (accountId: string, statementBalance: number, reconciliationDate: string) =>
+    fetchApi<FinanceAccount>(`/finance/accounts/${accountId}/reconcile`, {
+      method: "POST",
+      body: JSON.stringify({ statementBalance, reconciliationDate }),
+    }),
+};

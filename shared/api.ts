@@ -902,6 +902,220 @@ export interface SupplierStats {
 }
 
 // =====================================================
+// FINANCE TYPES
+// =====================================================
+
+export type TransactionType = "sale" | "refund" | "expense" | "purchase" | "adjustment" | "payout";
+export type TransactionStatus = "pending" | "completed" | "failed" | "cancelled";
+export type ExpenseCategory = "inventory" | "utilities" | "salaries" | "rent" | "marketing" | "equipment" | "maintenance" | "delivery" | "taxes" | "other";
+export type AccountType = "cash" | "bank" | "card_payments" | "cod_collections" | "petty_cash";
+
+export interface FinanceTransaction {
+  id: string;
+  type: TransactionType;
+  status: TransactionStatus;
+  amount: number;
+  currency: Currency;
+  description: string;
+  descriptionAr?: string;
+  category?: ExpenseCategory;
+  reference?: string;
+  referenceType?: "order" | "payment" | "refund" | "purchase_order" | "expense" | "manual";
+  referenceId?: string;
+  accountId: string;
+  accountName: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  notes?: string;
+  attachments?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface FinanceAccount {
+  id: string;
+  name: string;
+  nameAr: string;
+  type: AccountType;
+  balance: number;
+  currency: Currency;
+  isActive: boolean;
+  bankName?: string;
+  accountNumber?: string;
+  iban?: string;
+  lastReconciled?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinanceExpense {
+  id: string;
+  category: ExpenseCategory;
+  amount: number;
+  currency: Currency;
+  description: string;
+  descriptionAr?: string;
+  vendor?: string;
+  invoiceNumber?: string;
+  invoiceDate?: string;
+  dueDate?: string;
+  paidAt?: string;
+  status: "pending" | "paid" | "overdue" | "cancelled";
+  accountId?: string;
+  createdBy: string;
+  approvedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  attachments?: string[];
+  notes?: string;
+  isRecurring?: boolean;
+  recurringFrequency?: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
+}
+
+export interface FinanceSummary {
+  period: string;
+  startDate: string;
+  endDate: string;
+  totalRevenue: number;
+  totalCOGS: number;
+  grossProfit: number;
+  grossProfitMargin: number;
+  totalExpenses: number;
+  netProfit: number;
+  netProfitMargin: number;
+  totalRefunds: number;
+  totalVAT: number;
+  vatCollected: number;
+  vatPaid: number;
+  vatDue: number;
+  cashFlow: {
+    inflow: number;
+    outflow: number;
+    net: number;
+  };
+  revenueByPaymentMethod: {
+    method: string;
+    amount: number;
+    count: number;
+  }[];
+  expensesByCategory: {
+    category: ExpenseCategory;
+    amount: number;
+    count: number;
+  }[];
+  accountBalances: {
+    accountId: string;
+    accountName: string;
+    balance: number;
+  }[];
+}
+
+export interface ProfitLossReport {
+  period: string;
+  startDate: string;
+  endDate: string;
+  revenue: {
+    sales: number;
+    otherIncome: number;
+    totalRevenue: number;
+  };
+  costOfGoodsSold: {
+    inventoryCost: number;
+    supplierPurchases: number;
+    totalCOGS: number;
+  };
+  grossProfit: number;
+  grossProfitMargin: number;
+  operatingExpenses: {
+    category: ExpenseCategory;
+    amount: number;
+  }[];
+  totalOperatingExpenses: number;
+  operatingProfit: number;
+  otherExpenses: {
+    vatPaid: number;
+    refunds: number;
+    totalOther: number;
+  };
+  netProfit: number;
+  netProfitMargin: number;
+}
+
+export interface CashFlowReport {
+  period: string;
+  startDate: string;
+  endDate: string;
+  openingBalance: number;
+  closingBalance: number;
+  operatingActivities: {
+    cashFromSales: number;
+    cashFromCOD: number;
+    cashFromRefunds: number;
+    cashToSuppliers: number;
+    cashToExpenses: number;
+    netOperating: number;
+  };
+  investingActivities: {
+    equipmentPurchases: number;
+    netInvesting: number;
+  };
+  financingActivities: {
+    ownerDrawings: number;
+    capitalInjection: number;
+    netFinancing: number;
+  };
+  netCashFlow: number;
+  dailyCashFlow: {
+    date: string;
+    inflow: number;
+    outflow: number;
+    net: number;
+    balance: number;
+  }[];
+}
+
+export interface VATReport {
+  period: string;
+  startDate: string;
+  endDate: string;
+  salesVAT: {
+    taxableAmount: number;
+    vatAmount: number;
+    exemptAmount: number;
+  };
+  purchasesVAT: {
+    taxableAmount: number;
+    vatAmount: number;
+  };
+  vatDue: number;
+  vatRefund: number;
+  netVAT: number;
+  transactionDetails: {
+    date: string;
+    type: "sale" | "purchase";
+    reference: string;
+    taxableAmount: number;
+    vatAmount: number;
+    vatRate: number;
+  }[];
+}
+
+export interface CreateExpenseRequest {
+  category: ExpenseCategory;
+  amount: number;
+  description: string;
+  descriptionAr?: string;
+  vendor?: string;
+  invoiceNumber?: string;
+  invoiceDate?: string;
+  dueDate?: string;
+  accountId?: string;
+  notes?: string;
+  isRecurring?: boolean;
+  recurringFrequency?: "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
+}
+
+// =====================================================
 // DEMO RESPONSE (backward compatibility)
 // =====================================================
 

@@ -16,6 +16,7 @@ import {
   Truck,
   CreditCard,
   BarChart3,
+  Banknote,
   Settings,
   LogOut,
   Bell,
@@ -49,6 +50,7 @@ export type AdminTab =
   | "suppliers"
   | "users"
   | "delivery"
+  | "finance"
   | "payments"
   | "reports"
   | "promoCodes"
@@ -71,6 +73,7 @@ const tabConfig: { id: AdminTab; labelKey: string; icon: React.ElementType }[] =
   { id: "suppliers", labelKey: "admin.suppliers", icon: Factory },
   { id: "users", labelKey: "admin.users", icon: Users },
   { id: "delivery", labelKey: "admin.delivery", icon: Truck },
+  { id: "finance", labelKey: "admin.finance", icon: Banknote },
   { id: "payments", labelKey: "admin.payments", icon: CreditCard },
   { id: "reports", labelKey: "admin.reports", icon: BarChart3 },
   { id: "promoCodes", labelKey: "admin.promoCodes", icon: Tag },
