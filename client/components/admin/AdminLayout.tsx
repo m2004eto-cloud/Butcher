@@ -248,7 +248,7 @@ export function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex">
+    <div className="h-screen bg-slate-100 flex overflow-hidden">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -346,7 +346,7 @@ export function AdminLayout({
       </aside>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top header */}
         <header className="h-16 bg-white shadow-sm flex items-center justify-between px-4 lg:px-6">
           <div className="flex items-center gap-4">
@@ -754,7 +754,7 @@ export function AdminLayout({
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-4 lg:p-6 overflow-auto">{children}</main>
+        <main className="flex-1 p-4 lg:p-6 overflow-auto pb-20">{children}</main>
       </div>
 
       {/* Invoice Modal */}
