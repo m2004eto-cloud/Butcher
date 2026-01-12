@@ -613,12 +613,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {/* Product Details */}
               <div className="flex-1 p-6 overflow-y-auto">
                 {/* Category */}
-                <p className="text-xs font-semibold text-secondary uppercase tracking-wide">
+                <p className="text-xs font-semibold text-secondary dark:text-secondary uppercase tracking-wide">
                   {t(`category.${product.category.toLowerCase()}`)}
                 </p>
 
                 {/* Name */}
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mt-2">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-2">
                   {productName}
                 </h2>
 
@@ -642,23 +642,23 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   <span className="text-3xl font-bold text-primary">
                     <PriceDisplay price={discountedPrice} size="lg" />
                   </span>
-                  <span className="text-muted-foreground">/ {priceUnit}</span>
+                  <span className="text-gray-600 dark:text-gray-400">/ {priceUnit}</span>
                   {product.discount && product.discount > 0 && (
-                    <span className="text-lg text-muted-foreground line-through">
+                    <span className="text-lg text-gray-500 dark:text-gray-500 line-through">
                       <PriceDisplay price={product.price} size="md" />
                     </span>
                   )}
                 </div>
 
                 {/* Description */}
-                <p className="text-muted-foreground mt-4 leading-relaxed">
+                <p className="text-gray-700 dark:text-gray-300 mt-4 leading-relaxed">
                   {productDescription}
                 </p>
 
                 {/* Stock Status */}
                 <div className="flex items-center gap-2 mt-4">
                   <div className={`w-3 h-3 rounded-full ${product.available ? "bg-green-500" : "bg-red-500"}`} />
-                  <span className={`font-medium ${product.available ? "text-green-600" : "text-red-600"}`}>
+                  <span className={`font-medium ${product.available ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                     {product.available ? (language === "ar" ? "متوفر" : "In Stock") : (language === "ar" ? "غير متوفر" : "Out of Stock")}
                   </span>
                 </div>
@@ -668,7 +668,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   <div className="mt-6 space-y-4 border-t border-border pt-6">
                     {/* Bone Options */}
                     <div>
-                      <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                         <span>🦴</span>
                         {language === "ar" ? "تفاصيل المنتج" : "Product Details"}
                       </h4>
@@ -680,7 +680,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                             className={`px-4 py-2 rounded-lg border-2 font-medium transition-all text-sm ${
                               quickViewOptions.boneType.includes(option.id)
                                 ? "border-primary bg-primary/10 text-primary"
-                                : "border-border hover:border-primary/50"
+                                : "border-border text-gray-700 dark:text-gray-300 hover:border-primary/50"
                             }`}
                           >
                             {language === "ar" ? option.labelAr : option.label}
@@ -691,7 +691,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
                     {/* Cut Options */}
                     <div>
-                      <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
                         <span>🔪</span>
                         {language === "ar" ? "نوع القطع" : "Cut Type"}
                       </h4>
@@ -703,7 +703,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                             className={`px-4 py-2 rounded-lg border-2 font-medium transition-all text-sm ${
                               quickViewOptions.cutType.includes(option.id)
                                 ? "border-primary bg-primary/10 text-primary"
-                                : "border-border hover:border-primary/50"
+                                : "border-border text-gray-700 dark:text-gray-300 hover:border-primary/50"
                             }`}
                           >
                             {language === "ar" ? option.labelAr : option.label}
@@ -714,29 +714,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
                     {/* Quantity */}
                     <div>
-                      <h4 className="font-semibold text-foreground mb-2">
+                      <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
                         {language === "ar" ? "الكمية" : "Quantity"}
                       </h4>
                       <div className="flex items-center gap-4">
                         <div className="flex items-center border border-border rounded-lg">
                           <button
                             onClick={() => setQuickViewQuantity(Math.max(0.25, parseFloat((quickViewQuantity - 0.25).toFixed(3))))}
-                            className="p-3 hover:bg-muted transition-colors"
+                            className="p-3 hover:bg-muted transition-colors text-gray-700 dark:text-gray-300"
                           >
                             <Minus className="w-4 h-4" />
                           </button>
-                          <span className="w-24 text-center font-semibold">
+                          <span className="w-24 text-center font-semibold text-gray-900 dark:text-white">
                             {formatWeightDisplay(quickViewQuantity)}
                           </span>
                           <button
                             onClick={() => setQuickViewQuantity(parseFloat((quickViewQuantity + 0.25).toFixed(3)))}
-                            className="p-3 hover:bg-muted transition-colors"
+                            className="p-3 hover:bg-muted transition-colors text-gray-700 dark:text-gray-300"
                           >
                             <Plus className="w-4 h-4" />
                           </button>
                         </div>
-                        <span className="text-muted-foreground">
-                          = <PriceDisplay price={discountedPrice * quickViewQuantity} size="md" className="font-bold text-foreground" />
+                        <span className="text-gray-600 dark:text-gray-400">
+                          = <PriceDisplay price={discountedPrice * quickViewQuantity} size="md" className="font-bold text-gray-900 dark:text-white" />
                         </span>
                       </div>
                     </div>
