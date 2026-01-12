@@ -536,7 +536,93 @@ function createApp() {
 
   // Products endpoint
   app.get('/api/products', (req, res) => {
-    res.json({ success: true, data: demoProducts });
+    const { category, search, featured, available } = req.query;
+    let products = [...demoProducts];
+    
+    if (category && category !== 'all') {
+      products = products.filter(p => p.category === category);
+    }
+    if (search) {
+      const q = (search as string).toLowerCase();
+      products = products.filter(p => 
+        p.name.toLowerCase().includes(q) || 
+        p.nameAr?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q)
+      );
+    }
+    if (featured === 'true') {
+      products = products.filter(p => p.isFeatured);
+    }
+    if (available === 'true') {
+      products = products.filter(p => p.available !== false);
+    }
+    
+    res.json({ success: true, data: products });
+  });
+
+  // Get product by ID
+  app.get('/api/products/:id', (req, res) => {
+    const product = demoProducts.find(p => p.id === req.params.id);
+    if (!product) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+    res.json({ success: true, data: product });
+  });
+
+  // Create product
+  app.post('/api/products', (req, res) => {
+    const newProduct = {
+      id: `prod_${Date.now()}`,
+      ...req.body,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    demoProducts.push(newProduct);
+    
+    // Create stock item for new product
+    stockItems.set(newProduct.id, {
+      id: `stock_${newProduct.id}`,
+      productId: newProduct.id,
+      quantity: 0,
+      reservedQuantity: 0,
+      availableQuantity: 0,
+      lowStockThreshold: 1000,
+      reorderPoint: 2000,
+      reorderQuantity: 5000,
+      lastRestockedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    
+    res.status(201).json({ success: true, data: newProduct });
+  });
+
+  // Update product
+  app.put('/api/products/:id', (req, res) => {
+    const index = demoProducts.findIndex(p => p.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+    
+    demoProducts[index] = {
+      ...demoProducts[index],
+      ...req.body,
+      updatedAt: new Date().toISOString(),
+    };
+    
+    res.json({ success: true, data: demoProducts[index] });
+  });
+
+  // Delete product
+  app.delete('/api/products/:id', (req, res) => {
+    const index = demoProducts.findIndex(p => p.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ success: false, error: 'Product not found' });
+    }
+    
+    demoProducts.splice(index, 1);
+    stockItems.delete(req.params.id);
+    
+    res.json({ success: true, message: 'Product deleted successfully' });
   });
 
   // =====================================================
@@ -633,6 +719,101 @@ function createApp() {
     }));
     
     res.json({ success: true, data });
+  });
+
+  // Orders by status chart
+  app.get('/api/analytics/charts/orders-by-status', (req, res) => {
+    const allOrders = Array.from(orders.values());
+    const statusCounts: Record<string, number> = {};
+    
+    allOrders.forEach(o => {
+      statusCounts[o.status] = (statusCounts[o.status] || 0) + 1;
+    });
+    
+    const data = Object.entries(statusCounts).map(([status, count]) => ({
+      status,
+      count,
+      percentage: allOrders.length > 0 ? Math.round((count / allOrders.length) * 100) : 0,
+    }));
+    
+    res.json({ success: true, data });
+  });
+
+  // Sales by emirate chart
+  app.get('/api/analytics/charts/sales-by-emirate', (req, res) => {
+    const allOrders = Array.from(orders.values());
+    const emirateData: Record<string, { orders: number; revenue: number }> = {};
+    
+    allOrders.forEach(o => {
+      const emirate = o.deliveryAddress?.emirate || 'Unknown';
+      if (!emirateData[emirate]) {
+        emirateData[emirate] = { orders: 0, revenue: 0 };
+      }
+      emirateData[emirate].orders += 1;
+      emirateData[emirate].revenue += o.total;
+    });
+    
+    const data = Object.entries(emirateData).map(([emirate, stats]) => ({
+      emirate,
+      orders: stats.orders,
+      revenue: Math.round(stats.revenue * 100) / 100,
+    }));
+    
+    res.json({ success: true, data });
+  });
+
+  // Payment methods breakdown
+  app.get('/api/analytics/charts/payment-methods', (req, res) => {
+    const allOrders = Array.from(orders.values());
+    const methodData: Record<string, { count: number; amount: number }> = {};
+    
+    allOrders.forEach(o => {
+      const method = o.paymentMethod || 'unknown';
+      if (!methodData[method]) {
+        methodData[method] = { count: 0, amount: 0 };
+      }
+      methodData[method].count += 1;
+      methodData[method].amount += o.total;
+    });
+    
+    const data = Object.entries(methodData).map(([method, stats]) => ({
+      method,
+      count: stats.count,
+      amount: Math.round(stats.amount * 100) / 100,
+      percentage: allOrders.length > 0 ? Math.round((stats.count / allOrders.length) * 100) : 0,
+    }));
+    
+    res.json({ success: true, data });
+  });
+
+  // Hourly orders chart
+  app.get('/api/analytics/charts/hourly-orders', (req, res) => {
+    const data = Array.from({ length: 24 }, (_, hour) => ({
+      hour,
+      orders: Math.floor(Math.random() * 10) + (hour >= 10 && hour <= 20 ? 5 : 1),
+      revenue: (Math.floor(Math.random() * 10) + (hour >= 10 && hour <= 20 ? 5 : 1)) * 150,
+    }));
+    
+    res.json({ success: true, data });
+  });
+
+  // Real-time stats
+  app.get('/api/analytics/real-time', (req, res) => {
+    const allOrders = Array.from(orders.values());
+    const last30Min = new Date(Date.now() - 30 * 60 * 1000);
+    const recentOrders = allOrders.filter(o => new Date(o.createdAt) >= last30Min);
+    
+    res.json({
+      success: true,
+      data: {
+        activeOrders: allOrders.filter(o => ['pending', 'confirmed', 'processing', 'out_for_delivery'].includes(o.status)).length,
+        ordersLast30Min: recentOrders.length,
+        revenueLast30Min: recentOrders.reduce((sum, o) => sum + o.total, 0),
+        activeDrivers: Array.from(users.values()).filter(u => u.role === 'delivery' && u.isActive).length,
+        pendingDeliveries: allOrders.filter(o => o.status === 'out_for_delivery').length,
+        timestamp: new Date().toISOString(),
+      },
+    });
   });
 
   // =====================================================
@@ -875,12 +1056,52 @@ function createApp() {
     res.json({ success: true, data: order });
   });
 
+  // Get order by order number
+  app.get('/api/orders/number/:orderNumber', (req, res) => {
+    const order = Array.from(orders.values()).find(o => o.orderNumber === req.params.orderNumber);
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+    res.json({ success: true, data: order });
+  });
+
+  // Delete/Cancel order
+  app.delete('/api/orders/:id', (req, res) => {
+    const order = orders.get(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, error: 'Order not found' });
+    }
+    
+    if (['delivered', 'cancelled'].includes(order.status)) {
+      return res.status(400).json({ success: false, error: 'Cannot delete delivered or already cancelled orders' });
+    }
+    
+    order.status = 'cancelled';
+    order.updatedAt = new Date().toISOString();
+    order.statusHistory.push({
+      status: 'cancelled',
+      changedAt: new Date().toISOString(),
+      changedBy: 'admin',
+    });
+    
+    res.json({ success: true, data: order, message: 'Order cancelled successfully' });
+  });
+
   // =====================================================
   // STOCK / INVENTORY API
   // =====================================================
 
   app.get('/api/stock', (req, res) => {
     res.json({ success: true, data: Array.from(stockItems.values()) });
+  });
+
+  // Get stock for specific product
+  app.get('/api/stock/:productId', (req, res) => {
+    const item = stockItems.get(req.params.productId);
+    if (!item) {
+      return res.status(404).json({ success: false, error: 'Stock item not found' });
+    }
+    res.json({ success: true, data: item });
   });
 
   app.get('/api/stock/alerts', (req, res) => {
@@ -899,6 +1120,66 @@ function createApp() {
   app.get('/api/stock/movements', (req, res) => {
     const limit = parseInt(req.query.limit as string) || 50;
     res.json({ success: true, data: stockMovements.slice(0, limit) });
+  });
+
+  // Update stock
+  app.post('/api/stock/update', (req, res) => {
+    const { productId, quantity, type, reason } = req.body;
+    
+    let item = stockItems.get(productId);
+    if (!item) {
+      return res.status(404).json({ success: false, error: 'Stock item not found' });
+    }
+    
+    if (type === 'add') {
+      item.quantity += quantity;
+      item.availableQuantity += quantity;
+    } else if (type === 'subtract') {
+      item.quantity -= quantity;
+      item.availableQuantity -= quantity;
+    } else {
+      item.quantity = quantity;
+      item.availableQuantity = quantity - item.reservedQuantity;
+    }
+    
+    item.updatedAt = new Date().toISOString();
+    
+    stockMovements.unshift({
+      id: `mov_${Date.now()}`,
+      productId,
+      type: type === 'add' ? 'in' : 'out',
+      quantity,
+      reason: reason || 'Manual update',
+      createdAt: new Date().toISOString(),
+    });
+    
+    res.json({ success: true, data: item });
+  });
+
+  // Bulk update stock
+  app.post('/api/stock/bulk-update', (req, res) => {
+    const { updates } = req.body;
+    const results: StockItem[] = [];
+    
+    for (const update of updates) {
+      const item = stockItems.get(update.productId);
+      if (item) {
+        if (update.type === 'add') {
+          item.quantity += update.quantity;
+          item.availableQuantity += update.quantity;
+        } else if (update.type === 'subtract') {
+          item.quantity -= update.quantity;
+          item.availableQuantity -= update.quantity;
+        } else {
+          item.quantity = update.quantity;
+          item.availableQuantity = update.quantity - item.reservedQuantity;
+        }
+        item.updatedAt = new Date().toISOString();
+        results.push(item);
+      }
+    }
+    
+    res.json({ success: true, data: results });
   });
 
   app.post('/api/stock/restock/:productId', (req, res) => {
@@ -1346,6 +1627,13 @@ function createApp() {
     res.json({ success: true, data: po });
   });
 
+  // Get purchase order by ID
+  app.get('/api/suppliers/purchase-orders/:id', (req, res) => {
+    const po = supplierPOs.find(p => p.id === req.params.id);
+    if (!po) return res.status(404).json({ success: false, error: 'Purchase order not found' });
+    res.json({ success: true, data: po });
+  });
+
   app.delete('/api/suppliers/purchase-orders/:id', (req, res) => {
     const po = supplierPOs.find(p => p.id === req.params.id);
     if (!po) return res.status(404).json({ success: false, error: 'Purchase order not found' });
@@ -1358,16 +1646,48 @@ function createApp() {
     res.json({ success: true, data: po });
   });
 
+  // Get supplier by ID
+  app.get('/api/suppliers/:id', (req, res) => {
+    const supplier = supplierList.find(s => s.id === req.params.id);
+    if (!supplier) return res.status(404).json({ success: false, error: 'Supplier not found' });
+    res.json({ success: true, data: supplier });
+  });
+
+  // Update supplier
+  app.put('/api/suppliers/:id', (req, res) => {
+    const supplier = supplierList.find(s => s.id === req.params.id);
+    if (!supplier) return res.status(404).json({ success: false, error: 'Supplier not found' });
+    
+    Object.assign(supplier, req.body, { updatedAt: new Date().toISOString() });
+    res.json({ success: true, data: supplier });
+  });
+
   // =====================================================
   // USERS API
   // =====================================================
 
   app.get('/api/users', (req, res) => {
-    const allUsers = Array.from(users.values()).map(u => {
+    const { role, search } = req.query;
+    let allUsers = Array.from(users.values());
+    
+    if (role && role !== 'all') {
+      allUsers = allUsers.filter(u => u.role === role);
+    }
+    if (search) {
+      const q = (search as string).toLowerCase();
+      allUsers = allUsers.filter(u => 
+        u.firstName.toLowerCase().includes(q) ||
+        u.familyName.toLowerCase().includes(q) ||
+        u.email.toLowerCase().includes(q) ||
+        u.mobile.includes(q)
+      );
+    }
+    
+    const sanitized = allUsers.map(u => {
       const { password, ...userWithoutPassword } = u;
       return userWithoutPassword;
     });
-    res.json({ success: true, data: allUsers });
+    res.json({ success: true, data: sanitized });
   });
 
   app.get('/api/users/stats', (req, res) => {
@@ -1385,6 +1705,16 @@ function createApp() {
         newThisMonth: 3,
       },
     });
+  });
+
+  // Get user by ID
+  app.get('/api/users/:id', (req, res) => {
+    const user = users.get(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    const { password, ...userWithoutPassword } = user;
+    res.json({ success: true, data: userWithoutPassword });
   });
 
   app.put('/api/users/:id', (req, res) => {
@@ -1409,18 +1739,71 @@ function createApp() {
     res.json({ success: true, message: 'User deleted' });
   });
 
+  // Change user password
+  app.post('/api/users/:id/change-password', (req, res) => {
+    const user = users.get(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    const { currentPassword, newPassword } = req.body;
+    if (user.password !== currentPassword) {
+      return res.status(400).json({ success: false, error: 'Current password is incorrect' });
+    }
+    
+    user.password = newPassword;
+    user.updatedAt = new Date().toISOString();
+    
+    res.json({ success: true, message: 'Password changed successfully' });
+  });
+
+  // Verify user (admin)
+  app.post('/api/users/:id/verify', (req, res) => {
+    const user = users.get(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    user.isVerified = true;
+    user.updatedAt = new Date().toISOString();
+    
+    const { password, ...userWithoutPassword } = user;
+    res.json({ success: true, data: userWithoutPassword, message: 'User verified successfully' });
+  });
+
   // =====================================================
   // DELIVERY API
   // =====================================================
 
+  // Store delivery zones in memory
+  const deliveryZones = [
+    { id: 'zone_1', name: 'Dubai Downtown', nameAr: 'وسط دبي', emirate: 'Dubai', deliveryFee: 15, minimumOrder: 50, estimatedMinutes: 45, isActive: true, areas: ['Downtown', 'Business Bay', 'DIFC'] },
+    { id: 'zone_2', name: 'Dubai Marina', nameAr: 'مرسى دبي', emirate: 'Dubai', deliveryFee: 20, minimumOrder: 75, estimatedMinutes: 60, isActive: true, areas: ['Marina', 'JBR', 'JLT'] },
+    { id: 'zone_3', name: 'Abu Dhabi Central', nameAr: 'وسط أبوظبي', emirate: 'Abu Dhabi', deliveryFee: 25, minimumOrder: 100, estimatedMinutes: 90, isActive: true, areas: ['Corniche', 'Tourist Club', 'Hamdan Street'] },
+    { id: 'zone_4', name: 'Sharjah', nameAr: 'الشارقة', emirate: 'Sharjah', deliveryFee: 30, minimumOrder: 100, estimatedMinutes: 75, isActive: true, areas: ['Al Majaz', 'Rolla', 'Industrial Area'] },
+  ];
+
   app.get('/api/delivery/zones', (req, res) => {
-    const zones = [
-      { id: 'zone_1', name: 'Dubai Downtown', nameAr: 'وسط دبي', emirate: 'Dubai', deliveryFee: 15, minimumOrder: 50, estimatedMinutes: 45, isActive: true, areas: ['Downtown', 'Business Bay', 'DIFC'] },
-      { id: 'zone_2', name: 'Dubai Marina', nameAr: 'مرسى دبي', emirate: 'Dubai', deliveryFee: 20, minimumOrder: 75, estimatedMinutes: 60, isActive: true, areas: ['Marina', 'JBR', 'JLT'] },
-      { id: 'zone_3', name: 'Abu Dhabi Central', nameAr: 'وسط أبوظبي', emirate: 'Abu Dhabi', deliveryFee: 25, minimumOrder: 100, estimatedMinutes: 90, isActive: true, areas: ['Corniche', 'Tourist Club', 'Hamdan Street'] },
-      { id: 'zone_4', name: 'Sharjah', nameAr: 'الشارقة', emirate: 'Sharjah', deliveryFee: 30, minimumOrder: 100, estimatedMinutes: 75, isActive: true, areas: ['Al Majaz', 'Rolla', 'Industrial Area'] },
-    ];
+    const { emirate, activeOnly } = req.query;
+    let zones = [...deliveryZones];
+    
+    if (emirate) {
+      zones = zones.filter(z => z.emirate === emirate);
+    }
+    if (activeOnly === 'true') {
+      zones = zones.filter(z => z.isActive);
+    }
+    
     res.json({ success: true, data: zones });
+  });
+
+  // Get zone by ID
+  app.get('/api/delivery/zones/:id', (req, res) => {
+    const zone = deliveryZones.find(z => z.id === req.params.id);
+    if (!zone) {
+      return res.status(404).json({ success: false, error: 'Delivery zone not found' });
+    }
+    res.json({ success: true, data: zone });
   });
 
   app.post('/api/delivery/zones', (req, res) => {
@@ -1749,6 +2132,227 @@ function createApp() {
     res.json({ success: true, data: payment });
   });
 
+  // Get payment by ID
+  app.get('/api/payments/:id', (req, res) => {
+    const payment = payments.get(req.params.id);
+    if (!payment) {
+      return res.status(404).json({ success: false, error: 'Payment not found' });
+    }
+    res.json({ success: true, data: payment });
+  });
+
+  // Get payment by order ID
+  app.get('/api/payments/order/:orderId', (req, res) => {
+    const payment = Array.from(payments.values()).find(p => p.orderId === req.params.orderId);
+    if (!payment) {
+      return res.status(404).json({ success: false, error: 'Payment not found for this order' });
+    }
+    res.json({ success: true, data: payment });
+  });
+
+  // Process payment
+  app.post('/api/payments/process', (req, res) => {
+    const { orderId, amount, method, currency = 'AED', saveCard } = req.body;
+    
+    if (!orderId || !amount || !method) {
+      return res.status(400).json({ success: false, error: 'orderId, amount, and method are required' });
+    }
+
+    const order = orders.get(orderId);
+    const paymentId = `pay_${Date.now()}`;
+    const newPayment: Payment = {
+      id: paymentId,
+      orderId,
+      orderNumber: order?.orderNumber || `ORD-${Date.now()}`,
+      amount,
+      currency,
+      method,
+      status: method === 'cod' ? 'pending' : 'authorized',
+      customerName: order ? `${order.customerName}` : 'Guest',
+      gatewayTransactionId: `gtxn_${Date.now()}`,
+      refundedAmount: 0,
+      refunds: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    payments.set(paymentId, newPayment);
+
+    // Update order payment status
+    if (order) {
+      order.paymentStatus = method === 'cod' ? 'pending' : 'authorized';
+      order.updatedAt = new Date().toISOString();
+    }
+
+    res.status(201).json({ success: true, data: newPayment });
+  });
+
+  // Capture payment (finalize after authorization)
+  app.post('/api/payments/:id/capture', (req, res) => {
+    const payment = payments.get(req.params.id);
+    if (!payment) {
+      return res.status(404).json({ success: false, error: 'Payment not found' });
+    }
+    
+    if (payment.status !== 'authorized') {
+      return res.status(400).json({ success: false, error: 'Payment must be authorized before capture' });
+    }
+
+    payment.status = 'captured';
+    payment.updatedAt = new Date().toISOString();
+
+    // Update order payment status
+    const order = orders.get(payment.orderId);
+    if (order) {
+      order.paymentStatus = 'paid';
+      order.updatedAt = new Date().toISOString();
+    }
+
+    res.json({ success: true, data: payment, message: 'Payment captured successfully' });
+  });
+
+  // Get all active delivery tracking
+  app.get('/api/delivery/tracking', (req, res) => {
+    const allTracking = Array.from(deliveryTracking.values());
+    res.json({ success: true, data: allTracking });
+  });
+
+  // Get tracking by ID
+  app.get('/api/delivery/tracking/:id', (req, res) => {
+    const tracking = Array.from(deliveryTracking.values()).find(t => t.id === req.params.id);
+    if (!tracking) {
+      return res.status(404).json({ success: false, error: 'Tracking not found' });
+    }
+    res.json({ success: true, data: tracking });
+  });
+
+  // Update tracking location (for driver app)
+  app.patch('/api/delivery/tracking/:id/location', (req, res) => {
+    const tracking = Array.from(deliveryTracking.values()).find(t => t.id === req.params.id);
+    if (!tracking) {
+      return res.status(404).json({ success: false, error: 'Tracking not found' });
+    }
+    
+    const { latitude, longitude } = req.body;
+    // In a real app, we'd store the location history
+    tracking.updatedAt = new Date().toISOString();
+    
+    res.json({ success: true, data: { ...tracking, currentLocation: { latitude, longitude } } });
+  });
+
+  // Update tracking status
+  app.patch('/api/delivery/tracking/:id/status', (req, res) => {
+    const tracking = Array.from(deliveryTracking.values()).find(t => t.id === req.params.id);
+    if (!tracking) {
+      return res.status(404).json({ success: false, error: 'Tracking not found' });
+    }
+    
+    const { status, notes } = req.body;
+    tracking.status = status;
+    tracking.updatedAt = new Date().toISOString();
+    tracking.timeline.push({
+      status,
+      timestamp: new Date().toISOString(),
+      notes,
+    });
+    
+    res.json({ success: true, data: tracking });
+  });
+
+  // Complete delivery
+  app.post('/api/delivery/tracking/:id/complete', (req, res) => {
+    const tracking = Array.from(deliveryTracking.values()).find(t => t.id === req.params.id);
+    if (!tracking) {
+      return res.status(404).json({ success: false, error: 'Tracking not found' });
+    }
+    
+    const { signature, photo, notes } = req.body;
+    
+    tracking.status = 'delivered';
+    tracking.updatedAt = new Date().toISOString();
+    tracking.timeline.push({
+      status: 'delivered',
+      timestamp: new Date().toISOString(),
+      notes: notes || 'Delivery completed',
+    });
+    
+    // Update order status
+    const order = orders.get(tracking.orderId);
+    if (order) {
+      order.status = 'delivered';
+      order.updatedAt = new Date().toISOString();
+      order.statusHistory.push({
+        status: 'delivered',
+        changedAt: new Date().toISOString(),
+        changedBy: tracking.driverId,
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      data: tracking, 
+      message: 'Delivery completed successfully' 
+    });
+  });
+
+  // Check delivery availability for area
+  app.post('/api/delivery/check-availability', (req, res) => {
+    const { emirate, area } = req.body;
+    
+    const zone = deliveryZones.find(z => 
+      z.isActive && 
+      z.emirate === emirate && 
+      (z.areas.includes(area) || z.areas.length === 0)
+    );
+    
+    if (!zone) {
+      return res.json({
+        success: true,
+        data: {
+          available: false,
+          message: 'Delivery not available in this area',
+        },
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        available: true,
+        zone: zone,
+        deliveryFee: zone.deliveryFee,
+        minimumOrder: zone.minimumOrder,
+        estimatedMinutes: zone.estimatedMinutes,
+      },
+    });
+  });
+
+  // Get address by ID
+  app.get('/api/delivery/addresses/:id', (req, res) => {
+    const address = addresses.get(req.params.id);
+    if (!address) {
+      return res.status(404).json({ success: false, error: 'Address not found' });
+    }
+    res.json({ success: true, data: address });
+  });
+
+  // Set address as default
+  app.post('/api/delivery/addresses/:id/set-default', (req, res) => {
+    const address = addresses.get(req.params.id);
+    if (!address) {
+      return res.status(404).json({ success: false, error: 'Address not found' });
+    }
+    
+    // Unset other defaults for this user
+    addresses.forEach(addr => {
+      if (addr.userId === address.userId) {
+        addr.isDefault = addr.id === address.id;
+      }
+    });
+    
+    res.json({ success: true, data: address, message: 'Default address updated' });
+  });
+
   // =====================================================
   // REPORTS API
   // =====================================================
@@ -1889,6 +2493,80 @@ function createApp() {
     });
   });
 
+  // Sales timeseries report
+  app.get('/api/reports/sales-timeseries', (req, res) => {
+    const { startDate, endDate, granularity = 'day' } = req.query;
+    const allOrders = Array.from(orders.values());
+    
+    // Generate time series data
+    const now = new Date();
+    const days = granularity === 'hour' ? 1 : granularity === 'week' ? 28 : 7;
+    const dataPoints = [];
+    
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = date.toISOString().split('T')[0];
+      dataPoints.push({
+        date: dateStr,
+        timestamp: date.toISOString(),
+        revenue: 800 + Math.random() * 400,
+        orders: 5 + Math.floor(Math.random() * 5),
+        averageOrderValue: 150 + Math.random() * 50,
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        granularity,
+        startDate: dataPoints[0]?.date,
+        endDate: dataPoints[dataPoints.length - 1]?.date,
+        dataPoints,
+        summary: {
+          totalRevenue: dataPoints.reduce((sum, d) => sum + d.revenue, 0),
+          totalOrders: dataPoints.reduce((sum, d) => sum + d.orders, 0),
+          averageOrderValue: 175,
+        },
+      },
+    });
+  });
+
+  // Export report
+  app.post('/api/reports/export', (req, res) => {
+    const { reportType, format = 'csv', startDate, endDate, filters } = req.body;
+    
+    // In a real app, this would generate and return the actual file
+    const exportId = `export_${Date.now()}`;
+    
+    res.json({
+      success: true,
+      data: {
+        exportId,
+        reportType,
+        format,
+        status: 'processing',
+        downloadUrl: `/api/reports/export/${exportId}/download`,
+        createdAt: new Date().toISOString(),
+        estimatedCompletion: new Date(Date.now() + 30000).toISOString(),
+      },
+      message: 'Export started successfully',
+    });
+  });
+
+  // Get export status/download
+  app.get('/api/reports/export/:id', (req, res) => {
+    res.json({
+      success: true,
+      data: {
+        exportId: req.params.id,
+        status: 'completed',
+        downloadUrl: `/api/reports/export/${req.params.id}/download`,
+        createdAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+      },
+    });
+  });
+
   // Logout
   app.post('/api/users/logout', (req, res) => {
     const token = req.headers.authorization?.replace('Bearer ', '');
@@ -2009,9 +2687,29 @@ function createApp() {
     res.json({ success: true, data: financeAccounts });
   });
 
+  // Get finance account by ID
+  app.get('/api/finance/accounts/:id', (req, res) => {
+    const account = financeAccounts.find(a => a.id === req.params.id);
+    if (!account) {
+      return res.status(404).json({ success: false, error: 'Account not found' });
+    }
+    res.json({ success: true, data: account });
+  });
+
   app.post('/api/finance/accounts', (req, res) => {
     const newAccount = { id: `acc-${Date.now()}`, ...req.body, balance: 0, createdAt: new Date().toISOString() };
     res.status(201).json({ success: true, data: newAccount });
+  });
+
+  // Update finance account
+  app.put('/api/finance/accounts/:id', (req, res) => {
+    const accountIndex = financeAccounts.findIndex(a => a.id === req.params.id);
+    if (accountIndex === -1) {
+      return res.status(404).json({ success: false, error: 'Account not found' });
+    }
+    
+    Object.assign(financeAccounts[accountIndex], req.body, { updatedAt: new Date().toISOString() });
+    res.json({ success: true, data: financeAccounts[accountIndex] });
   });
 
   app.post('/api/finance/accounts/transfer', (req, res) => {
@@ -2025,14 +2723,72 @@ function createApp() {
     res.json({ success: true, data: { ...account, lastReconciled: new Date().toISOString() } });
   });
 
+  // Get transaction by ID
+  app.get('/api/finance/transactions/:id', (req, res) => {
+    const allOrders = Array.from(orders.values());
+    const transactions = allOrders.map((o, i) => ({
+      id: `txn-${i + 1}`,
+      type: 'sale',
+      status: 'completed',
+      amount: o.total,
+      currency: 'AED',
+      description: `Order #${o.orderNumber}`,
+      reference: o.orderNumber,
+      referenceType: 'order',
+      referenceId: o.id,
+      accountId: o.paymentMethod === 'card' ? 'acc-002' : 'acc-003',
+      accountName: o.paymentMethod === 'card' ? 'Card Payments' : 'COD Collections',
+      createdBy: 'system',
+      createdAt: o.createdAt,
+      updatedAt: o.createdAt,
+    }));
+    
+    const transaction = transactions.find(t => t.id === req.params.id);
+    if (!transaction) {
+      return res.status(404).json({ success: false, error: 'Transaction not found' });
+    }
+    res.json({ success: true, data: transaction });
+  });
+
   // Finance expenses
   app.get('/api/finance/expenses', (req, res) => {
     res.json({ success: true, data: financeExpenses });
   });
 
+  // Get expense by ID
+  app.get('/api/finance/expenses/:id', (req, res) => {
+    const expense = financeExpenses.find(e => e.id === req.params.id);
+    if (!expense) {
+      return res.status(404).json({ success: false, error: 'Expense not found' });
+    }
+    res.json({ success: true, data: expense });
+  });
+
   app.post('/api/finance/expenses', (req, res) => {
     const newExpense = { id: `exp-${Date.now()}`, ...req.body, status: 'pending', createdAt: new Date().toISOString() };
     res.status(201).json({ success: true, data: newExpense });
+  });
+
+  // Update expense
+  app.put('/api/finance/expenses/:id', (req, res) => {
+    const expenseIndex = financeExpenses.findIndex(e => e.id === req.params.id);
+    if (expenseIndex === -1) {
+      return res.status(404).json({ success: false, error: 'Expense not found' });
+    }
+    
+    Object.assign(financeExpenses[expenseIndex], req.body, { updatedAt: new Date().toISOString() });
+    res.json({ success: true, data: financeExpenses[expenseIndex] });
+  });
+
+  // Delete expense
+  app.delete('/api/finance/expenses/:id', (req, res) => {
+    const expenseIndex = financeExpenses.findIndex(e => e.id === req.params.id);
+    if (expenseIndex === -1) {
+      return res.status(404).json({ success: false, error: 'Expense not found' });
+    }
+    
+    const deleted = financeExpenses.splice(expenseIndex, 1)[0];
+    res.json({ success: true, data: deleted, message: 'Expense deleted successfully' });
   });
 
   app.post('/api/finance/expenses/:id/pay', (req, res) => {
