@@ -145,7 +145,7 @@ const STATUS_FLOW = ["assigned", "picked_up", "in_transit", "nearby", "delivered
 
 export default function DriverDashboardPage() {
   const navigate = useNavigate();
-  const { user, login, logout, isAuthenticated } = useAuth();
+  const { user, loginWithCredentials, logout, isLoggedIn } = useAuth();
   const { language } = useLanguage();
   const isRTL = language === "ar";
   const t = translations[language];
@@ -211,12 +211,12 @@ export default function DriverDashboardPage() {
   }, [user, isDriver]);
 
   useEffect(() => {
-    if (isAuthenticated && isDriver) {
+    if (isLoggedIn && isDriver) {
       fetchDeliveries();
     } else {
       setLoading(false);
     }
-  }, [isAuthenticated, isDriver, fetchDeliveries]);
+  }, [isLoggedIn, isDriver, fetchDeliveries]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -224,9 +224,9 @@ export default function DriverDashboardPage() {
     setLoggingIn(true);
 
     try {
-      const success = await login(loginForm.username, loginForm.password);
-      if (!success) {
-        setLoginError(t.loginError);
+      const result = await loginWithCredentials(loginForm.username, loginForm.password);
+      if (!result.success) {
+        setLoginError(result.error || t.loginError);
       }
     } catch (error) {
       setLoginError(t.loginError);
@@ -332,7 +332,7 @@ export default function DriverDashboardPage() {
   };
 
   // Login Screen
-  if (!isAuthenticated) {
+  if (!isLoggedIn) {
     return (
       <div
         className="min-h-screen bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center p-4"
