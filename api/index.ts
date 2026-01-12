@@ -1531,6 +1531,34 @@ function createApp() {
     res.json({ success: true, message: 'Address deleted' });
   });
 
+  // In-memory tracking storage for assigned deliveries
+  const deliveryTracking = new Map<string, {
+    id: string;
+    orderId: string;
+    orderNumber: string;
+    driverId: string;
+    driverName: string;
+    driverMobile: string;
+    status: string;
+    estimatedArrival: string;
+    timeline: { status: string; timestamp: string; notes?: string }[];
+    createdAt: string;
+    updatedAt: string;
+  }>();
+
+  // Get tracking by order ID
+  app.get('/api/delivery/tracking/by-order/:orderId', (req, res) => {
+    const { orderId } = req.params;
+    const tracking = deliveryTracking.get(orderId);
+    
+    if (!tracking) {
+      // Return null data if no tracking exists yet (order not assigned)
+      return res.json({ success: true, data: null });
+    }
+    
+    res.json({ success: true, data: tracking });
+  });
+
   // Get delivery drivers
   app.get('/api/delivery/drivers', (req, res) => {
     const drivers = Array.from(users.values())
@@ -1540,7 +1568,7 @@ function createApp() {
         name: `${d.firstName} ${d.familyName}`,
         mobile: d.mobile,
         email: d.email,
-        activeDeliveries: 0,
+        activeDeliveries: Array.from(deliveryTracking.values()).filter(t => t.driverId === d.id && t.status !== 'delivered').length,
       }));
     res.json({ success: true, data: drivers });
   });
@@ -1590,11 +1618,49 @@ function createApp() {
       updatedAt: new Date().toISOString(),
     };
 
+    // Store tracking info
+    deliveryTracking.set(orderId, tracking);
+
     res.json({
       success: true,
       data: tracking,
       message: 'Delivery assigned successfully',
     });
+  });
+
+  // Update tracking status
+  app.post('/api/delivery/tracking/:orderId/update', (req, res) => {
+    const { orderId } = req.params;
+    const { status, notes } = req.body;
+    
+    const tracking = deliveryTracking.get(orderId);
+    if (!tracking) {
+      return res.status(404).json({ success: false, error: 'Tracking not found' });
+    }
+    
+    tracking.status = status;
+    tracking.updatedAt = new Date().toISOString();
+    tracking.timeline.push({
+      status,
+      timestamp: new Date().toISOString(),
+      notes,
+    });
+    
+    // Update order status if delivered
+    if (status === 'delivered') {
+      const order = orders.get(orderId);
+      if (order) {
+        order.status = 'delivered';
+        order.updatedAt = new Date().toISOString();
+        order.statusHistory.push({
+          status: 'delivered',
+          changedAt: new Date().toISOString(),
+          changedBy: tracking.driverId,
+        });
+      }
+    }
+    
+    res.json({ success: true, data: tracking });
   });
 
   // Legacy route with orderId in path
