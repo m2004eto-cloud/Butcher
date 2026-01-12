@@ -399,6 +399,39 @@ function DeliveriesList({
         const tracking = trackingInfo[order.id];
         const hasDriver = tracking?.driverId && tracking?.driverName;
         const assignedTime = tracking?.timeline?.find(t => t.status === 'assigned')?.timestamp;
+        const trackingStatus = tracking?.status;
+        
+        // Status color mapping
+        const statusColors: Record<string, { bg: string; text: string; border: string }> = {
+          assigned: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
+          picked_up: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' },
+          in_transit: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' },
+          nearby: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
+          delivered: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
+          failed: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+        };
+        
+        const statusLabels: Record<string, { en: string; ar: string }> = {
+          assigned: { en: 'Assigned', ar: 'تم التعيين' },
+          picked_up: { en: 'Picked Up', ar: 'تم الاستلام' },
+          in_transit: { en: 'In Transit', ar: 'في الطريق' },
+          nearby: { en: 'Nearby', ar: 'قريب' },
+          delivered: { en: 'Delivered', ar: 'تم التوصيل' },
+          failed: { en: 'Failed', ar: 'فشل' },
+        };
+        
+        const orderStatusLabels: Record<string, { en: string; ar: string }> = {
+          confirmed: { en: 'Confirmed', ar: 'مؤكد' },
+          processing: { en: 'Processing', ar: 'قيد التحضير' },
+          ready_for_pickup: { en: 'Ready', ar: 'جاهز' },
+          out_for_delivery: { en: 'Out for Delivery', ar: 'في الطريق' },
+        };
+        
+        const currentStatus = trackingStatus || order.status;
+        const statusColor = statusColors[currentStatus] || statusColors.assigned;
+        const statusLabel = trackingStatus 
+          ? (isRTL ? statusLabels[trackingStatus]?.ar : statusLabels[trackingStatus]?.en) || trackingStatus
+          : (isRTL ? orderStatusLabels[order.status]?.ar : orderStatusLabels[order.status]?.en) || order.status;
         
         return (
           <div
@@ -411,7 +444,18 @@ function DeliveriesList({
                   <Truck className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-medium text-slate-900 text-sm sm:text-base">{order.orderNumber}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-slate-900 text-sm sm:text-base">{order.orderNumber}</p>
+                    {/* Tracking Status Badge */}
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-medium border",
+                      statusColor.bg,
+                      statusColor.text,
+                      statusColor.border
+                    )}>
+                      {statusLabel}
+                    </span>
+                  </div>
                   <p className="text-xs sm:text-sm text-slate-500 truncate">{order.customerName}</p>
                   <p className="text-xs text-slate-400 truncate">
                     {order.deliveryAddress.area}, {order.deliveryAddress.emirate}
@@ -476,7 +520,37 @@ function DeliveriesList({
                       </div>
                     </div>
                   )}
+                  
+                  {/* Estimated Arrival */}
+                  {tracking.estimatedArrival && (
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-slate-400" />
+                      <div>
+                        <p className="text-xs text-slate-500">{isRTL ? 'الوصول المتوقع' : 'Est. Arrival'}</p>
+                        <p className="text-sm font-medium text-slate-900">{formatDateTime(tracking.estimatedArrival)}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
+                
+                {/* Tracking Timeline */}
+                {tracking.timeline && tracking.timeline.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-xs font-medium text-slate-500 mb-2">{isRTL ? 'سجل التتبع' : 'Tracking History'}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {tracking.timeline.map((event, idx) => (
+                        <div key={idx} className="flex items-center gap-1 text-xs">
+                          <span className="w-2 h-2 rounded-full bg-primary"></span>
+                          <span className="text-slate-600 capitalize">{event.status.replace('_', ' ')}</span>
+                          <span className="text-slate-400">
+                            {new Date(event.timestamp).toLocaleTimeString(isRTL ? 'ar-AE' : 'en-AE', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          {idx < tracking.timeline.length - 1 && <span className="text-slate-300 mx-1">→</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
