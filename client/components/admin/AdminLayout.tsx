@@ -348,43 +348,43 @@ export function AdminLayout({
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top header */}
-        <header className="h-16 bg-white shadow-sm flex items-center justify-between px-4 lg:px-6">
-          <div className="flex items-center gap-4">
+        <header className="h-14 sm:h-16 bg-white shadow-sm flex items-center justify-between px-2 sm:px-4 lg:px-6">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 hover:bg-slate-100 rounded-lg"
+              className="lg:hidden p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg flex-shrink-0"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 className="text-sm sm:text-xl font-bold text-slate-900 truncate">
               {activeTab === "dashboard" ? t("admin.dashboardOverview") : t(`admin.${activeTab}`)}
             </h2>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
             {/* Language Switcher */}
-            <div className="flex gap-1 items-center bg-slate-100 border border-slate-200 rounded-md p-1">
+            <div className="flex gap-0.5 items-center bg-slate-100 border border-slate-200 rounded-md p-0.5 sm:p-1">
               <button
                 onClick={() => setLanguage("en")}
                 className={cn(
-                  "px-3 py-1.5 text-sm font-medium rounded transition-colors",
+                  "px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium rounded transition-colors",
                   language === "en"
                     ? "bg-primary text-white"
                     : "text-slate-600 hover:bg-slate-200"
                 )}
               >
-                EN
+                E
               </button>
               <button
                 onClick={() => setLanguage("ar")}
                 className={cn(
-                  "px-3 py-1.5 text-sm font-medium rounded transition-colors",
+                  "px-2 py-1 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium rounded transition-colors",
                   language === "ar"
                     ? "bg-primary text-white"
                     : "text-slate-600 hover:bg-slate-200"
                 )}
               >
-                AR
+                ع
               </button>
             </div>
 
@@ -395,9 +395,9 @@ export function AdminLayout({
                   setChatOpen(!chatOpen);
                   setNotificationOpen(false);
                 }}
-                className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="relative p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg transition-colors"
               >
-                <MessageCircle className="w-5 h-5 text-slate-600" />
+                <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
                 {chatTotalUnread > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-green-500 text-white text-xs font-bold rounded-full px-1">
                     {chatTotalUnread > 99 ? '99+' : chatTotalUnread}
@@ -633,9 +633,9 @@ export function AdminLayout({
                   setNotificationOpen(!notificationOpen);
                   setChatOpen(false);
                 }}
-                className="relative p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="relative p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg transition-colors"
               >
-                <Bell className="w-5 h-5 text-slate-600" />
+                <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-slate-600" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1">
                     {unreadCount > 99 ? '99+' : unreadCount}

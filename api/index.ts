@@ -36,6 +36,18 @@ interface Session {
   expiresAt: string;
 }
 
+interface TrackingData {
+  id: string;
+  driverId: string;
+  driverName: string;
+  driverMobile: string;
+  status: string;
+  estimatedArrival: string;
+  timeline: { status: string; timestamp: string; notes?: string }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Order {
   id: string;
   orderNumber: string;
@@ -56,6 +68,7 @@ interface Order {
   deliveryAddress: { building: string; street: string; area: string; emirate: string; landmark?: string };
   deliveryNotes?: string;
   statusHistory: { status: string; changedAt: string; changedBy: string }[];
+  trackingInfo?: TrackingData;
   createdAt: string;
   updatedAt: string;
 }
@@ -1973,7 +1986,38 @@ function createApp() {
   // Get tracking by order ID
   app.get('/api/delivery/tracking/by-order/:orderId', (req, res) => {
     const { orderId } = req.params;
-    const tracking = deliveryTracking.get(orderId);
+    
+    // First check the in-memory tracking map
+    let tracking = deliveryTracking.get(orderId);
+    
+    // If not found in map, try to get from order's trackingInfo
+    if (!tracking) {
+      const order = orders.get(orderId);
+      if (order?.trackingInfo) {
+        // Reconstruct full tracking response from order
+        tracking = {
+          id: order.trackingInfo.id,
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          driverId: order.trackingInfo.driverId,
+          driverName: order.trackingInfo.driverName,
+          driverMobile: order.trackingInfo.driverMobile,
+          status: order.trackingInfo.status,
+          customerName: order.customerName,
+          customerMobile: order.customerMobile,
+          deliveryAddress: order.deliveryAddress,
+          deliveryNotes: order.deliveryNotes,
+          items: order.items.map(i => ({ name: i.productName, quantity: i.quantity })),
+          total: order.total,
+          estimatedArrival: order.trackingInfo.estimatedArrival,
+          timeline: order.trackingInfo.timeline,
+          createdAt: order.trackingInfo.createdAt,
+          updatedAt: order.trackingInfo.updatedAt,
+        };
+        // Cache it in the map for faster future access
+        deliveryTracking.set(orderId, tracking);
+      }
+    }
     
     if (!tracking) {
       // Return null data if no tracking exists yet (order not assigned)
@@ -2049,8 +2093,21 @@ function createApp() {
       updatedAt: new Date().toISOString(),
     };
 
-    // Store tracking info
+    // Store tracking info in both the Map and on the order itself
     deliveryTracking.set(orderId, tracking);
+    
+    // Also store on order for persistence across serverless instances
+    order.trackingInfo = {
+      id: tracking.id,
+      driverId: tracking.driverId,
+      driverName: tracking.driverName,
+      driverMobile: tracking.driverMobile,
+      status: tracking.status,
+      estimatedArrival: tracking.estimatedArrival,
+      timeline: tracking.timeline,
+      createdAt: tracking.createdAt,
+      updatedAt: tracking.updatedAt,
+    };
 
     res.json({
       success: true,
@@ -2064,7 +2121,35 @@ function createApp() {
     const { orderId } = req.params;
     const { status, notes } = req.body;
     
-    const tracking = deliveryTracking.get(orderId);
+    // First check the in-memory tracking map
+    let tracking = deliveryTracking.get(orderId);
+    
+    // If not found in map, try to get from order's trackingInfo
+    const order = orders.get(orderId);
+    if (!tracking && order?.trackingInfo) {
+      // Reconstruct tracking from order
+      tracking = {
+        id: order.trackingInfo.id,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        driverId: order.trackingInfo.driverId,
+        driverName: order.trackingInfo.driverName,
+        driverMobile: order.trackingInfo.driverMobile,
+        status: order.trackingInfo.status,
+        customerName: order.customerName,
+        customerMobile: order.customerMobile,
+        deliveryAddress: order.deliveryAddress,
+        deliveryNotes: order.deliveryNotes,
+        items: order.items.map(i => ({ name: i.productName, quantity: i.quantity })),
+        total: order.total,
+        estimatedArrival: order.trackingInfo.estimatedArrival,
+        timeline: order.trackingInfo.timeline,
+        createdAt: order.trackingInfo.createdAt,
+        updatedAt: order.trackingInfo.updatedAt,
+      };
+      deliveryTracking.set(orderId, tracking);
+    }
+    
     if (!tracking) {
       return res.status(404).json({ success: false, error: 'Tracking not found' });
     }
@@ -2077,18 +2162,40 @@ function createApp() {
       notes,
     });
     
-    // Update order status if delivered
-    if (status === 'delivered') {
-      const order = orders.get(orderId);
-      if (order) {
-        order.status = 'delivered';
+    // Update order status and trackingInfo
+    if (order) {
+      // Map tracking status to order status
+      const orderStatusMap: Record<string, string> = {
+        'assigned': 'out_for_delivery',
+        'picked_up': 'out_for_delivery',
+        'in_transit': 'out_for_delivery',
+        'nearby': 'out_for_delivery',
+        'delivered': 'delivered',
+      };
+      const newOrderStatus = orderStatusMap[status] || order.status;
+      
+      if (order.status !== newOrderStatus) {
+        order.status = newOrderStatus;
         order.updatedAt = new Date().toISOString();
         order.statusHistory.push({
-          status: 'delivered',
+          status: newOrderStatus,
           changedAt: new Date().toISOString(),
           changedBy: tracking.driverId,
         });
       }
+      
+      // Update trackingInfo on order for persistence
+      order.trackingInfo = {
+        id: tracking.id,
+        driverId: tracking.driverId,
+        driverName: tracking.driverName,
+        driverMobile: tracking.driverMobile,
+        status: tracking.status,
+        estimatedArrival: tracking.estimatedArrival,
+        timeline: [...tracking.timeline],
+        createdAt: tracking.createdAt,
+        updatedAt: tracking.updatedAt,
+      };
     }
     
     res.json({ success: true, data: tracking });
@@ -2261,6 +2368,32 @@ function createApp() {
 
   // Get all active delivery tracking
   app.get('/api/delivery/tracking', (req, res) => {
+    // First, ensure any orders with trackingInfo are in the map
+    Array.from(orders.values()).forEach(order => {
+      if (order.trackingInfo && !deliveryTracking.has(order.id)) {
+        const tracking = {
+          id: order.trackingInfo.id,
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          driverId: order.trackingInfo.driverId,
+          driverName: order.trackingInfo.driverName,
+          driverMobile: order.trackingInfo.driverMobile,
+          status: order.trackingInfo.status,
+          customerName: order.customerName,
+          customerMobile: order.customerMobile,
+          deliveryAddress: order.deliveryAddress,
+          deliveryNotes: order.deliveryNotes,
+          items: order.items.map(i => ({ name: i.productName, quantity: i.quantity })),
+          total: order.total,
+          estimatedArrival: order.trackingInfo.estimatedArrival,
+          timeline: order.trackingInfo.timeline,
+          createdAt: order.trackingInfo.createdAt,
+          updatedAt: order.trackingInfo.updatedAt,
+        };
+        deliveryTracking.set(order.id, tracking);
+      }
+    });
+    
     const allTracking = Array.from(deliveryTracking.values());
     res.json({ success: true, data: allTracking });
   });
@@ -2334,6 +2467,19 @@ function createApp() {
         changedAt: new Date().toISOString(),
         changedBy: tracking.driverId,
       });
+      
+      // Update trackingInfo on order for persistence
+      order.trackingInfo = {
+        id: tracking.id,
+        driverId: tracking.driverId,
+        driverName: tracking.driverName,
+        driverMobile: tracking.driverMobile,
+        status: 'delivered',
+        estimatedArrival: tracking.estimatedArrival,
+        timeline: [...tracking.timeline],
+        createdAt: tracking.createdAt,
+        updatedAt: tracking.updatedAt,
+      };
     }
     
     res.json({ 
