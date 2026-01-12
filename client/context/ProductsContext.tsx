@@ -484,8 +484,8 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const resetToDefaults = () => {
     const productsWithImages = INITIAL_PRODUCTS.map(ensureProductImage);
     setProducts(productsWithImages);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(productsWithImages));
-    localStorage.setItem(VERSION_KEY, String(PRODUCTS_VERSION));
+    localStorage.setItem("butcher_products", JSON.stringify(productsWithImages));
+    localStorage.setItem("butcher_products_version", String(PRODUCTS_VERSION));
   };
 
   // Export products as JSON string for syncing
@@ -514,8 +514,8 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
       const productsWithImages = validProducts.map(ensureProductImage);
       setProducts(productsWithImages);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(productsWithImages));
-      localStorage.setItem(VERSION_KEY, String(PRODUCTS_VERSION));
+      localStorage.setItem("butcher_products", JSON.stringify(productsWithImages));
+      localStorage.setItem("butcher_products_version", String(PRODUCTS_VERSION));
       return true;
     } catch {
       return false;

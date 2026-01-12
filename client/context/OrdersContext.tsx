@@ -184,45 +184,7 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [orders, setOrders] = useState<CustomerOrder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load orders from localStorage on mount
-  useEffect(() => {
-    if (user?.id) {
-      const saved = localStorage.getItem(`customer_orders_${user.id}`);
-      if (saved) {
-        try {
-          setOrders(JSON.parse(saved));
-        } catch {
-          setOrders(INITIAL_ORDERS);
-        }
-      } else {
-        // Load demo orders for first time
-        setOrders(INITIAL_ORDERS);
-      }
-      // Also fetch from API to get latest updates
-      fetchOrders();
-    } else {
-      setOrders([]);
-    }
-  }, [user?.id]);
-
-  // Poll for order updates every 30 seconds
-  useEffect(() => {
-    if (!user?.id) return;
-    
-    const interval = setInterval(() => {
-      fetchOrders();
-    }, 30000); // Poll every 30 seconds
-    
-    return () => clearInterval(interval);
-  }, [user?.id, fetchOrders]);
-
-  // Save to localStorage
-  useEffect(() => {
-    if (user?.id && orders.length > 0) {
-      localStorage.setItem(`customer_orders_${user.id}`, JSON.stringify(orders));
-    }
-  }, [orders, user?.id]);
-
+  // Define fetchOrders first so it can be used in effects
   const fetchOrders = useCallback(async () => {
     if (!user?.id) return;
     
@@ -278,10 +240,11 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             updatedAt: order.updatedAt,
           }));
           
-          // Merge with localStorage orders (for demo purposes)
-          const localOrders = orders.filter(o => !apiOrders.find(ao => ao.id === o.id));
-          const mergedOrders = [...apiOrders, ...localOrders];
-          setOrders(mergedOrders);
+          // Merge with existing orders (keep local orders that aren't in API)
+          setOrders(prevOrders => {
+            const localOrders = prevOrders.filter(o => !apiOrders.find(ao => ao.id === o.id));
+            return [...apiOrders, ...localOrders];
+          });
         }
       }
     } catch (error) {
@@ -290,7 +253,51 @@ export const OrdersProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, orders]);
+  }, [user?.id]);
+
+  // Load orders from localStorage on mount
+  useEffect(() => {
+    if (user?.id) {
+      const saved = localStorage.getItem(`customer_orders_${user.id}`);
+      if (saved) {
+        try {
+          setOrders(JSON.parse(saved));
+        } catch {
+          setOrders(INITIAL_ORDERS);
+        }
+      } else {
+        // Load demo orders for first time
+        setOrders(INITIAL_ORDERS);
+      }
+    } else {
+      setOrders([]);
+    }
+  }, [user?.id]);
+
+  // Fetch from API after initial load
+  useEffect(() => {
+    if (user?.id) {
+      fetchOrders();
+    }
+  }, [user?.id, fetchOrders]);
+
+  // Poll for order updates every 30 seconds
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 30000); // Poll every 30 seconds
+    
+    return () => clearInterval(interval);
+  }, [user?.id, fetchOrders]);
+
+  // Save to localStorage
+  useEffect(() => {
+    if (user?.id && orders.length > 0) {
+      localStorage.setItem(`customer_orders_${user.id}`, JSON.stringify(orders));
+    }
+  }, [orders, user?.id]);
 
   const getOrderById = useCallback((orderId: string): CustomerOrder | undefined => {
     return orders.find((o) => o.id === orderId);
