@@ -771,16 +771,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     {language === "ar" ? "غير متوفر" : "Out of Stock"}
                   </button>
                 )}
-
-                {/* View Full Details Link */}
-                <Link
-                  to={`/product/${product.id}`}
-                  className="flex items-center justify-center gap-2 text-primary hover:underline mt-4 text-sm font-medium"
-                  onClick={handleCloseQuickView}
-                >
-                  {language === "ar" ? "عرض كل التفاصيل" : "View Full Details"}
-                  <ExternalLink className="w-4 h-4" />
-                </Link>
               </div>
             </div>
           </div>
