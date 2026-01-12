@@ -362,12 +362,14 @@ function createApp() {
         return res.status(400).json({ success: false, error: 'Username and password are required' });
       }
       
+      // Find user by username or email
       const user = Array.from(users.values()).find(
-        u => u.username?.toLowerCase() === username.toLowerCase()
+        u => u.username?.toLowerCase() === username.toLowerCase() || 
+             u.email.toLowerCase() === username.toLowerCase()
       );
 
       if (!user) {
-        return res.status(401).json({ success: false, error: 'No account found with this username' });
+        return res.status(401).json({ success: false, error: 'No account found with this username or email' });
       }
 
       if (!user.isActive) {
@@ -1923,11 +1925,50 @@ function createApp() {
     driverName: string;
     driverMobile: string;
     status: string;
+    customerName?: string;
+    customerMobile?: string;
+    deliveryAddress?: any;
+    deliveryNotes?: string;
+    items?: { name: string; quantity: number }[];
+    total?: number;
     estimatedArrival: string;
     timeline: { status: string; timestamp: string; notes?: string }[];
     createdAt: string;
     updatedAt: string;
   }>();
+
+  // Pre-populate demo tracking for out_for_delivery orders
+  const driver = users.get("driver_1");
+  if (driver) {
+    Array.from(orders.values())
+      .filter(o => o.status === 'out_for_delivery')
+      .forEach((order, index) => {
+        const tracking = {
+          id: `track_demo_${index}`,
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          driverId: driver.id,
+          driverName: `${driver.firstName} ${driver.familyName}`,
+          driverMobile: driver.mobile,
+          status: 'assigned',
+          customerName: order.customerName,
+          customerMobile: order.customerMobile,
+          deliveryAddress: order.deliveryAddress,
+          deliveryNotes: order.deliveryNotes,
+          items: order.items.map(i => ({ name: i.productName, quantity: i.quantity })),
+          total: order.total,
+          estimatedArrival: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          timeline: [{
+            status: 'assigned',
+            timestamp: new Date().toISOString(),
+            notes: `Assigned to driver: ${driver.firstName}`,
+          }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        deliveryTracking.set(order.id, tracking);
+      });
+  }
 
   // Get tracking by order ID
   app.get('/api/delivery/tracking/by-order/:orderId', (req, res) => {
