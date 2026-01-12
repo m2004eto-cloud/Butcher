@@ -18,6 +18,8 @@ import {
   User,
   Calendar,
   Phone,
+  Navigation,
+  Eye,
 } from "lucide-react";
 import { deliveryApi, ordersApi, usersApi } from "@/lib/api";
 import type { DeliveryZone, DeliveryTracking, Order, User as UserType } from "@shared/api";
@@ -39,8 +41,11 @@ const translations = {
     drivers: "drivers",
     refresh: "Refresh",
     activeDeliveriesTab: "Active Deliveries",
+    orderTrackingTab: "Order Tracking",
     deliveryZonesTab: "Delivery Zones",
     noActiveDeliveries: "No active deliveries",
+    noActiveTracking: "No active tracking",
+    noTrackingDesc: "Orders with assigned drivers will appear here",
     items: "items",
     assignDriver: "Assign Driver",
     addZone: "Add Zone",
@@ -94,8 +99,11 @@ const translations = {
     drivers: "سائقين",
     refresh: "تحديث",
     activeDeliveriesTab: "التوصيلات النشطة",
+    orderTrackingTab: "تتبع الطلبات",
     deliveryZonesTab: "مناطق التوصيل",
     noActiveDeliveries: "لا توجد توصيلات نشطة",
+    noActiveTracking: "لا يوجد تتبع نشط",
+    noTrackingDesc: "الطلبات المعينة للسائقين ستظهر هنا",
     items: "عناصر",
     assignDriver: "تعيين سائق",
     addZone: "إضافة منطقة",
@@ -155,7 +163,7 @@ export function DeliveryTab({ onNavigate }: AdminTabProps) {
   const [trackingInfo, setTrackingInfo] = useState<Record<string, DeliveryTracking>>({});
   const [drivers, setDrivers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<"zones" | "deliveries">("deliveries");
+  const [activeView, setActiveView] = useState<"deliveries" | "tracking" | "zones">("deliveries");
   const [zoneModal, setZoneModal] = useState<DeliveryZone | null>(null);
   const [createZoneModal, setCreateZoneModal] = useState(false);
   const [assignModal, setAssignModal] = useState<Order | null>(null);
@@ -270,18 +278,20 @@ export function DeliveryTab({ onNavigate }: AdminTabProps) {
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm">
         <div className="border-b border-slate-200">
-          <div className="flex gap-1 p-1">
+          <div className="flex gap-1 p-1 overflow-x-auto">
             {[
               { id: "deliveries", label: t.activeDeliveriesTab, icon: Truck },
+              { id: "tracking", label: t.orderTrackingTab, icon: Navigation },
               { id: "zones", label: t.deliveryZonesTab, icon: MapPin },
             ].map((tab) => {
               const Icon = tab.icon;
+              const trackingCount = Object.keys(trackingInfo).length;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveView(tab.id as typeof activeView)}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                    "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
                     activeView === tab.id
                       ? "bg-primary text-white"
                       : "text-slate-600 hover:bg-slate-100"
@@ -289,6 +299,14 @@ export function DeliveryTab({ onNavigate }: AdminTabProps) {
                 >
                   <Icon className="w-4 h-4" />
                   {tab.label}
+                  {tab.id === "tracking" && trackingCount > 0 && (
+                    <span className={cn(
+                      "px-1.5 py-0.5 text-xs rounded-full",
+                      activeView === tab.id ? "bg-white/20 text-white" : "bg-primary/10 text-primary"
+                    )}>
+                      {trackingCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -306,6 +324,14 @@ export function DeliveryTab({ onNavigate }: AdminTabProps) {
               drivers={drivers}
               trackingInfo={trackingInfo}
               onAssign={(order) => setAssignModal(order)}
+              isRTL={isRTL}
+              t={t}
+            />
+          ) : activeView === "tracking" ? (
+            <TrackingList
+              trackingInfo={trackingInfo}
+              orders={pendingDeliveries}
+              onViewOrder={(orderId) => onNavigate?.("orders", orderId)}
               isRTL={isRTL}
               t={t}
             />
@@ -354,6 +380,172 @@ export function DeliveryTab({ onNavigate }: AdminTabProps) {
           t={t}
         />
       )}
+    </div>
+  );
+}
+
+// Tracking List Component - Shows all active order tracking
+function TrackingList({
+  trackingInfo,
+  orders,
+  onViewOrder,
+  isRTL,
+  t,
+}: {
+  trackingInfo: Record<string, DeliveryTracking>;
+  orders: Order[];
+  onViewOrder: (orderId: string) => void;
+  isRTL: boolean;
+  t: typeof translations.en;
+}) {
+  const trackingList = Object.values(trackingInfo);
+  
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString(isRTL ? 'ar-AE' : 'en-AE', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const statusColors: Record<string, { bg: string; text: string; border: string }> = {
+    assigned: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
+    picked_up: { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-200' },
+    in_transit: { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' },
+    nearby: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-200' },
+    delivered: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200' },
+    failed: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+  };
+
+  const statusLabels: Record<string, { en: string; ar: string }> = {
+    assigned: { en: 'Assigned', ar: 'تم التعيين' },
+    picked_up: { en: 'Picked Up', ar: 'تم الاستلام' },
+    in_transit: { en: 'In Transit', ar: 'في الطريق' },
+    nearby: { en: 'Nearby', ar: 'قريب' },
+    delivered: { en: 'Delivered', ar: 'تم التوصيل' },
+    failed: { en: 'Failed', ar: 'فشل' },
+  };
+
+  if (trackingList.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <Navigation className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+        <p className="text-slate-500 font-medium">{t.noActiveTracking}</p>
+        <p className="text-sm text-slate-400 mt-1">{t.noTrackingDesc}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {trackingList.map((tracking) => {
+        const order = orders.find(o => o.id === tracking.orderId);
+        const statusColor = statusColors[tracking.status] || statusColors.assigned;
+        const statusLabel = isRTL 
+          ? statusLabels[tracking.status]?.ar 
+          : statusLabels[tracking.status]?.en || tracking.status;
+
+        return (
+          <div
+            key={tracking.id}
+            className="p-4 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-200 transition-colors"
+          >
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Navigation className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-slate-900">{tracking.orderNumber}</p>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded-full text-xs font-medium border",
+                      statusColor.bg,
+                      statusColor.text,
+                      statusColor.border
+                    )}>
+                      {statusLabel}
+                    </span>
+                  </div>
+                  {order && (
+                    <p className="text-sm text-slate-500">{order.customerName}</p>
+                  )}
+                </div>
+              </div>
+              
+              <button
+                onClick={() => onViewOrder(tracking.orderId)}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <Eye className="w-4 h-4" />
+                {isRTL ? 'عرض الطلب' : 'View Order'}
+              </button>
+            </div>
+
+            {/* Driver & Tracking Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4 text-slate-400" />
+                <div>
+                  <p className="text-xs text-slate-500">{isRTL ? 'السائق' : 'Driver'}</p>
+                  <p className="font-medium text-slate-900">{tracking.driverName}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-slate-400" />
+                <div>
+                  <p className="text-xs text-slate-500">{isRTL ? 'الهاتف' : 'Phone'}</p>
+                  <p className="font-medium text-slate-900" dir="ltr">{tracking.driverMobile}</p>
+                </div>
+              </div>
+              
+              {tracking.estimatedArrival && (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  <div>
+                    <p className="text-xs text-slate-500">{isRTL ? 'الوصول المتوقع' : 'Est. Arrival'}</p>
+                    <p className="font-medium text-slate-900">{formatDateTime(tracking.estimatedArrival)}</p>
+                  </div>
+                </div>
+              )}
+              
+              {order?.deliveryAddress && (
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-slate-400" />
+                  <div>
+                    <p className="text-xs text-slate-500">{isRTL ? 'الوجهة' : 'Destination'}</p>
+                    <p className="font-medium text-slate-900 truncate max-w-[200px]">
+                      {order.deliveryAddress.area}, {order.deliveryAddress.emirate}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Timeline */}
+            {tracking.timeline && tracking.timeline.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-slate-200">
+                <p className="text-xs font-medium text-slate-500 mb-2">{isRTL ? 'سجل التتبع' : 'Tracking Timeline'}</p>
+                <div className="flex flex-wrap gap-2">
+                  {tracking.timeline.map((event, idx) => (
+                    <div key={idx} className="flex items-center gap-1 text-xs bg-white px-2 py-1 rounded border border-slate-100">
+                      <span className="w-2 h-2 rounded-full bg-primary"></span>
+                      <span className="text-slate-700 capitalize">{event.status.replace('_', ' ')}</span>
+                      <span className="text-slate-400">
+                        {new Date(event.timestamp).toLocaleTimeString(isRTL ? 'ar-AE' : 'en-AE', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
