@@ -16,9 +16,20 @@ import {
   PieChart,
   ArrowUp,
   ArrowDown,
+  Users,
+  User,
+  Search,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  XCircle,
+  CheckCircle,
+  Clock,
+  Truck,
+  Ban,
 } from "lucide-react";
-import { reportsApi, analyticsApi } from "@/lib/api";
-import type { SalesReportData, SalesByCategory, SalesByProduct } from "@shared/api";
+import { reportsApi, analyticsApi, ordersApi, usersApi } from "@/lib/api";
+import type { SalesReportData, SalesByCategory, SalesByProduct, Order, User as UserType } from "@shared/api";
 import { cn } from "@/lib/utils";
 import { CurrencySymbol } from "@/components/CurrencySymbol";
 import { useLanguage } from "@/context/LanguageContext";
@@ -28,6 +39,7 @@ interface AdminTabProps {
 }
 
 type ReportPeriod = "today" | "week" | "month" | "year";
+type ReportType = "sales" | "customers";
 
 // Local types for the component
 interface TopProduct {
@@ -48,13 +60,27 @@ interface SalesReport {
   dailySales: { date: string; revenue: number; orders: number }[];
 }
 
+interface CustomerOrderStats {
+  customerId: string;
+  customerName: string;
+  customerEmail: string;
+  totalOrders: number;
+  completedOrders: number;
+  canceledOrders: number;
+  pendingOrders: number;
+  totalSpent: number;
+  orders: Order[];
+}
+
 export function ReportsTab({ onNavigate }: AdminTabProps) {
   const { language } = useLanguage();
   const isRTL = language === 'ar';
 
   const t = {
     salesReports: isRTL ? "تقارير المبيعات" : "Sales Reports",
+    customerReports: isRTL ? "تقارير العملاء" : "Customer Orders Report",
     comprehensiveAnalytics: isRTL ? "تحليلات وتقارير المبيعات الشاملة" : "Comprehensive sales analytics and reporting",
+    customerAnalytics: isRTL ? "تقارير طلبات العملاء التفصيلية" : "Detailed customer orders report",
     refresh: isRTL ? "تحديث" : "Refresh",
     export: isRTL ? "تصدير" : "Export",
     exportCsv: isRTL ? "تصدير كـ CSV" : "Export as CSV",
@@ -84,13 +110,48 @@ export function ReportsTab({ onNavigate }: AdminTabProps) {
     netRevenue: isRTL ? "صافي الإيرادات" : "Net Revenue",
     totalRefunds: isRTL ? "إجمالي المبالغ المستردة" : "Total Refunds",
     vsPreviousPeriod: isRTL ? "مقارنة بالفترة السابقة" : "vs previous period",
+    // Customer report translations
+    customer: isRTL ? "العميل" : "Customer",
+    orders: isRTL ? "الطلبات" : "Orders",
+    completed: isRTL ? "مكتمل" : "Completed",
+    canceled: isRTL ? "ملغي" : "Canceled",
+    pending: isRTL ? "قيد الانتظار" : "Pending",
+    totalSpent: isRTL ? "إجمالي الإنفاق" : "Total Spent",
+    viewOrders: isRTL ? "عرض الطلبات" : "View Orders",
+    hideOrders: isRTL ? "إخفاء الطلبات" : "Hide Orders",
+    searchCustomers: isRTL ? "البحث عن العملاء..." : "Search customers...",
+    noCustomersFound: isRTL ? "لم يتم العثور على عملاء" : "No customers found",
+    orderNumber: isRTL ? "رقم الطلب" : "Order #",
+    date: isRTL ? "التاريخ" : "Date",
+    status: isRTL ? "الحالة" : "Status",
+    items: isRTL ? "العناصر" : "Items",
+    amount: isRTL ? "المبلغ" : "Amount",
+    noOrders: isRTL ? "لا توجد طلبات" : "No orders",
+    allStatuses: isRTL ? "كل الحالات" : "All Statuses",
+    processing: isRTL ? "قيد المعالجة" : "Processing",
+    confirmed: isRTL ? "مؤكد" : "Confirmed",
+    preparing: isRTL ? "قيد التحضير" : "Preparing",
+    ready: isRTL ? "جاهز" : "Ready",
+    outForDelivery: isRTL ? "في الطريق" : "Out for Delivery",
+    delivered: isRTL ? "تم التوصيل" : "Delivered",
+    totalCustomers: isRTL ? "إجمالي العملاء" : "Total Customers",
+    activeCustomers: isRTL ? "عملاء نشطون" : "Active Customers",
+    canceledOrdersTotal: isRTL ? "الطلبات الملغية" : "Canceled Orders",
+    completedOrdersTotal: isRTL ? "الطلبات المكتملة" : "Completed Orders",
   };
 
+  const [reportType, setReportType] = useState<ReportType>("sales");
   const [period, setPeriod] = useState<ReportPeriod>("month");
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [categorySales, setCategorySales] = useState<SalesByCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Customer orders report state
+  const [customerStats, setCustomerStats] = useState<CustomerOrderStats[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const fetchData = async () => {
     setLoading(true);
@@ -114,49 +175,103 @@ export function ReportsTab({ onNavigate }: AdminTabProps) {
         break;
     }
 
-    const [reportRes, topRes, categoryRes, revenueRes] = await Promise.all([
-      reportsApi.getSales({
-        startDate: startDate.toISOString().split("T")[0],
-        endDate: endDate.toISOString().split("T")[0],
-      }),
-      analyticsApi.getTopProducts(period, 10),
-      reportsApi.getSalesByCategory(period),
-      analyticsApi.getRevenueChart(period),
-    ]);
+    if (reportType === "sales") {
+      const [reportRes, topRes, categoryRes, revenueRes] = await Promise.all([
+        reportsApi.getSales({
+          startDate: startDate.toISOString().split("T")[0],
+          endDate: endDate.toISOString().split("T")[0],
+        }),
+        analyticsApi.getTopProducts(period, 10),
+        reportsApi.getSalesByCategory(period),
+        analyticsApi.getRevenueChart(period),
+      ]);
 
-    if (reportRes.success && reportRes.data) {
-      const data = reportRes.data;
-      setSalesReport({
-        totalRevenue: data.totalSales || 0,
-        totalOrders: data.totalOrders || 0,
-        itemsSold: 0, // Not in the API response
-        averageOrderValue: data.averageOrderValue || 0,
-        taxCollected: data.totalVat || 0,
-        totalDiscounts: data.totalDiscount || 0,
-        totalRefunds: 0, // Not in the API response
-        dailySales: revenueRes.success && revenueRes.data 
-          ? revenueRes.data.map(d => ({ date: d.date, revenue: d.revenue, orders: d.orders }))
-          : [],
-      });
+      if (reportRes.success && reportRes.data) {
+        const data = reportRes.data;
+        setSalesReport({
+          totalRevenue: data.totalSales || 0,
+          totalOrders: data.totalOrders || 0,
+          itemsSold: 0, // Not in the API response
+          averageOrderValue: data.averageOrderValue || 0,
+          taxCollected: data.totalVat || 0,
+          totalDiscounts: data.totalDiscount || 0,
+          totalRefunds: 0, // Not in the API response
+          dailySales: revenueRes.success && revenueRes.data 
+            ? revenueRes.data.map(d => ({ date: d.date, revenue: d.revenue, orders: d.orders }))
+            : [],
+        });
+      }
+      
+      if (topRes.success && topRes.data) {
+        setTopProducts(topRes.data.map(p => ({
+          productId: p.productId,
+          productName: p.productName,
+          sales: p.sales,
+          quantity: p.quantity,
+        })));
+      }
+      
+      if (categoryRes.success && categoryRes.data) setCategorySales(categoryRes.data);
+    } else {
+      // Fetch customer orders report
+      const [customersRes, ordersRes] = await Promise.all([
+        usersApi.getAll({ role: "customer" }),
+        ordersApi.getAll({ limit: 1000 }), // Get all orders
+      ]);
+
+      if (customersRes.success && customersRes.data && ordersRes.success && ordersRes.data) {
+        const customers = customersRes.data;
+        const orders = ordersRes.data;
+
+        // Group orders by customer
+        const customerOrderMap = new Map<string, Order[]>();
+        orders.forEach(order => {
+          const customerId = order.userId;
+          if (!customerOrderMap.has(customerId)) {
+            customerOrderMap.set(customerId, []);
+          }
+          customerOrderMap.get(customerId)!.push(order);
+        });
+
+        // Build customer stats
+        const stats: CustomerOrderStats[] = customers.map(customer => {
+          const customerOrders = customerOrderMap.get(customer.id) || [];
+          const completedOrders = customerOrders.filter(o => o.status === "delivered").length;
+          const canceledOrders = customerOrders.filter(o => o.status === "cancelled").length;
+          const pendingOrders = customerOrders.filter(o => 
+            !["delivered", "cancelled"].includes(o.status)
+          ).length;
+          const totalSpent = customerOrders
+            .filter(o => o.status !== "cancelled")
+            .reduce((sum, o) => sum + (o.total || 0), 0);
+
+          return {
+            customerId: customer.id,
+            customerName: `${customer.firstName} ${customer.familyName}`,
+            customerEmail: customer.email,
+            totalOrders: customerOrders.length,
+            completedOrders,
+            canceledOrders,
+            pendingOrders,
+            totalSpent,
+            orders: customerOrders.sort((a, b) => 
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            ),
+          };
+        });
+
+        // Sort by total orders descending
+        stats.sort((a, b) => b.totalOrders - a.totalOrders);
+        setCustomerStats(stats);
+      }
     }
-    
-    if (topRes.success && topRes.data) {
-      setTopProducts(topRes.data.map(p => ({
-        productId: p.productId,
-        productName: p.productName,
-        sales: p.sales,
-        quantity: p.quantity,
-      })));
-    }
-    
-    if (categoryRes.success && categoryRes.data) setCategorySales(categoryRes.data);
 
     setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
-  }, [period]);
+  }, [period, reportType]);
 
   const handleExport = async (format: "csv" | "pdf") => {
     const endDate = new Date();
@@ -188,9 +303,11 @@ export function ReportsTab({ onNavigate }: AdminTabProps) {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="text-lg font-semibold text-slate-900">{t.salesReports}</h3>
+          <h3 className="text-lg font-semibold text-slate-900">
+            {reportType === "sales" ? t.salesReports : t.customerReports}
+          </h3>
           <p className="text-sm text-slate-500">
-            {t.comprehensiveAnalytics}
+            {reportType === "sales" ? t.comprehensiveAnalytics : t.customerAnalytics}
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
@@ -233,28 +350,73 @@ export function ReportsTab({ onNavigate }: AdminTabProps) {
         </div>
       </div>
 
-      {/* Period Selector */}
-      <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm overflow-x-auto max-w-full">
-        {(Object.keys(periodLabels) as ReportPeriod[]).map((p) => (
+      {/* Report Type Tabs */}
+      <div className="bg-white rounded-xl shadow-sm p-2">
+        <div className="flex gap-2">
           <button
-            key={p}
-            onClick={() => setPeriod(p)}
+            onClick={() => setReportType("sales")}
             className={cn(
-              "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
-              period === p
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              reportType === "sales"
                 ? "bg-primary text-white"
                 : "text-slate-600 hover:bg-slate-100"
             )}
           >
-            {periodLabels[p]}
+            <BarChart3 className="w-4 h-4" />
+            {t.salesReports}
           </button>
-        ))}
+          <button
+            onClick={() => setReportType("customers")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+              reportType === "customers"
+                ? "bg-primary text-white"
+                : "text-slate-600 hover:bg-slate-100"
+            )}
+          >
+            <Users className="w-4 h-4" />
+            {t.customerReports}
+          </button>
+        </div>
       </div>
+
+      {/* Period Selector - Only for Sales Report */}
+      {reportType === "sales" && (
+        <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm overflow-x-auto max-w-full">
+          {(Object.keys(periodLabels) as ReportPeriod[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={cn(
+                "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
+                period === p
+                  ? "bg-primary text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              )}
+            >
+              {periodLabels[p]}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
+      ) : reportType === "customers" ? (
+        <CustomerOrdersReport
+          customerStats={customerStats}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          expandedCustomer={expandedCustomer}
+          setExpandedCustomer={setExpandedCustomer}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          isRTL={isRTL}
+          t={t}
+          onNavigate={onNavigate}
+        />
       ) : (
         <>
           {/* Summary Stats */}
@@ -622,5 +784,310 @@ function ChangeIndicator({
         <span className="text-slate-500 font-normal ml-1">{labelText}</span>
       )}
     </span>
+  );
+}
+
+// Customer Orders Report Component
+function CustomerOrdersReport({
+  customerStats,
+  searchQuery,
+  setSearchQuery,
+  expandedCustomer,
+  setExpandedCustomer,
+  statusFilter,
+  setStatusFilter,
+  isRTL,
+  t,
+  onNavigate,
+}: {
+  customerStats: CustomerOrderStats[];
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  expandedCustomer: string | null;
+  setExpandedCustomer: (id: string | null) => void;
+  statusFilter: string;
+  setStatusFilter: (status: string) => void;
+  isRTL: boolean;
+  t: Record<string, string>;
+  onNavigate?: (tab: string, id?: string) => void;
+}) {
+  // Filter customers based on search query
+  const filteredCustomers = customerStats.filter((customer) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      customer.customerName.toLowerCase().includes(query) ||
+      customer.customerEmail.toLowerCase().includes(query)
+    );
+  });
+
+  // Calculate totals
+  const totalCustomers = customerStats.length;
+  const activeCustomers = customerStats.filter(c => c.totalOrders > 0).length;
+  const totalCanceled = customerStats.reduce((sum, c) => sum + c.canceledOrders, 0);
+  const totalCompleted = customerStats.reduce((sum, c) => sum + c.completedOrders, 0);
+
+  // Status config for badges
+  const getStatusConfig = (status: string) => {
+    const configs: Record<string, { color: string; icon: React.ElementType; label: string }> = {
+      pending: { color: "bg-yellow-100 text-yellow-700", icon: Clock, label: t.pending },
+      processing: { color: "bg-blue-100 text-blue-700", icon: Clock, label: t.processing },
+      confirmed: { color: "bg-blue-100 text-blue-700", icon: CheckCircle, label: t.confirmed },
+      preparing: { color: "bg-orange-100 text-orange-700", icon: Package, label: t.preparing },
+      ready: { color: "bg-purple-100 text-purple-700", icon: Package, label: t.ready },
+      out_for_delivery: { color: "bg-indigo-100 text-indigo-700", icon: Truck, label: t.outForDelivery },
+      delivered: { color: "bg-green-100 text-green-700", icon: CheckCircle, label: t.delivered },
+      cancelled: { color: "bg-red-100 text-red-700", icon: Ban, label: t.canceled },
+    };
+    return configs[status] || configs.pending;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-slate-500">{t.totalCustomers}</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-900">{totalCustomers}</p>
+            </div>
+            <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-slate-500">{t.activeCustomers}</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-900">{activeCustomers}</p>
+            </div>
+            <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
+              <User className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-slate-500">{t.completedOrdersTotal}</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600">{totalCompleted}</p>
+            </div>
+            <div className="w-10 h-10 bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-slate-500">{t.canceledOrdersTotal}</p>
+              <p className="text-xl sm:text-2xl font-bold text-red-600">{totalCanceled}</p>
+            </div>
+            <div className="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center">
+              <XCircle className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className={cn(
+              "absolute top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400",
+              isRTL ? "right-3" : "left-3"
+            )} />
+            <input
+              type="text"
+              placeholder={t.searchCustomers}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={cn(
+                "w-full py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none",
+                isRTL ? "pr-10 pl-4" : "pl-10 pr-4"
+              )}
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          >
+            <option value="all">{t.allStatuses}</option>
+            <option value="pending">{t.pending}</option>
+            <option value="processing">{t.processing}</option>
+            <option value="confirmed">{t.confirmed}</option>
+            <option value="preparing">{t.preparing}</option>
+            <option value="delivered">{t.delivered}</option>
+            <option value="cancelled">{t.canceled}</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Customer List */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        {filteredCustomers.length === 0 ? (
+          <div className="text-center py-12">
+            <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500">{t.noCustomersFound}</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-200">
+            {filteredCustomers.map((customer) => {
+              const isExpanded = expandedCustomer === customer.customerId;
+              const filteredOrders = statusFilter === "all" 
+                ? customer.orders 
+                : customer.orders.filter(o => o.status === statusFilter);
+
+              return (
+                <div key={customer.customerId}>
+                  {/* Customer Row */}
+                  <div
+                    className={cn(
+                      "p-4 cursor-pointer hover:bg-slate-50 transition-colors",
+                      isExpanded && "bg-slate-50"
+                    )}
+                    onClick={() => setExpandedCustomer(isExpanded ? null : customer.customerId)}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="font-bold text-blue-600">
+                            {customer.customerName[0]}
+                          </span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900 truncate">{customer.customerName}</p>
+                          <p className="text-xs text-slate-500 truncate">{customer.customerEmail}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 sm:gap-6 flex-shrink-0">
+                        <div className="text-center hidden sm:block">
+                          <p className="text-lg font-bold text-slate-900">{customer.totalOrders}</p>
+                          <p className="text-xs text-slate-500">{t.orders}</p>
+                        </div>
+                        <div className="text-center hidden md:block">
+                          <p className="text-lg font-bold text-green-600">{customer.completedOrders}</p>
+                          <p className="text-xs text-slate-500">{t.completed}</p>
+                        </div>
+                        <div className="text-center hidden md:block">
+                          <p className="text-lg font-bold text-red-600">{customer.canceledOrders}</p>
+                          <p className="text-xs text-slate-500">{t.canceled}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-slate-900 flex items-center gap-1">
+                            <CurrencySymbol size="sm" /> {customer.totalSpent.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-slate-500">{t.totalSpent}</p>
+                        </div>
+                        <button className="p-2 hover:bg-slate-200 rounded-lg">
+                          {isExpanded ? (
+                            <ChevronUp className="w-5 h-5 text-slate-400" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-slate-400" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Orders Table */}
+                  {isExpanded && (
+                    <div className="bg-slate-50 px-4 pb-4">
+                      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                        {filteredOrders.length === 0 ? (
+                          <div className="text-center py-8 text-slate-500">
+                            {t.noOrders}
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead className="bg-slate-100">
+                                <tr>
+                                  <th className={cn("px-4 py-2 text-xs font-medium text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                                    {t.orderNumber}
+                                  </th>
+                                  <th className={cn("px-4 py-2 text-xs font-medium text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                                    {t.date}
+                                  </th>
+                                  <th className={cn("px-4 py-2 text-xs font-medium text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                                    {t.status}
+                                  </th>
+                                  <th className={cn("px-4 py-2 text-xs font-medium text-slate-500 uppercase", isRTL ? "text-right" : "text-left")}>
+                                    {t.items}
+                                  </th>
+                                  <th className={cn("px-4 py-2 text-xs font-medium text-slate-500 uppercase", isRTL ? "text-left" : "text-right")}>
+                                    {t.amount}
+                                  </th>
+                                  <th className="px-4 py-2"></th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-200">
+                                {filteredOrders.map((order) => {
+                                  const statusConfig = getStatusConfig(order.status);
+                                  const StatusIcon = statusConfig.icon;
+                                  return (
+                                    <tr key={order.id} className="hover:bg-slate-50">
+                                      <td className="px-4 py-3">
+                                        <span className="font-mono text-sm text-primary">
+                                          {order.orderNumber || order.id.slice(-8)}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3 text-sm text-slate-600">
+                                        {new Date(order.createdAt).toLocaleDateString(isRTL ? "ar-AE" : "en-AE", {
+                                          year: "numeric",
+                                          month: "short",
+                                          day: "numeric",
+                                        })}
+                                      </td>
+                                      <td className="px-4 py-3">
+                                        <span className={cn(
+                                          "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
+                                          statusConfig.color
+                                        )}>
+                                          <StatusIcon className="w-3 h-3" />
+                                          {statusConfig.label}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3 text-sm text-slate-600">
+                                        {order.items?.length || 0} {t.items}
+                                      </td>
+                                      <td className={cn("px-4 py-3 text-sm font-medium", isRTL ? "text-left" : "text-right")}>
+                                        <span className="flex items-center gap-1 justify-end">
+                                          <CurrencySymbol size="xs" /> {(order.total || 0).toFixed(2)}
+                                        </span>
+                                      </td>
+                                      <td className="px-4 py-3">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onNavigate?.("orders", order.id);
+                                          }}
+                                          className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg"
+                                          title={t.viewOrders}
+                                        >
+                                          <Eye className="w-4 h-4" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
