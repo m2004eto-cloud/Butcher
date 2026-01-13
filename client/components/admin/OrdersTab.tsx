@@ -430,9 +430,14 @@ export function OrdersTab({ onNavigate, selectedOrderId, onClearSelection }: Adm
                 {filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-slate-50">
                     <td className="px-3 sm:px-6 py-3 sm:py-4">
-                      <span className="font-mono text-xs sm:text-sm font-medium text-blue-600">
-                        {order.orderNumber}
-                      </span>
+                      <div>
+                        <span className="font-mono text-xs sm:text-sm font-medium text-blue-600">
+                          {order.orderNumber}
+                        </span>
+                        <p className="text-xs text-slate-400 mt-0.5 md:hidden">
+                          {new Date(order.createdAt).toLocaleDateString(isRTL ? 'ar-AE' : 'en-AE')} • {new Date(order.createdAt).toLocaleTimeString(isRTL ? 'ar-AE' : 'en-AE', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">
                       <div>

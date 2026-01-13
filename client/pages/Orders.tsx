@@ -307,6 +307,9 @@ Total: AED ${order.total.toFixed(2)}
                               year: "numeric",
                               month: "short",
                               day: "numeric",
+                            })} • {new Date(order.createdAt).toLocaleTimeString(language === "ar" ? "ar-AE" : "en-AE", {
+                              hour: "2-digit",
+                              minute: "2-digit",
                             })}
                           </p>
                         </div>
