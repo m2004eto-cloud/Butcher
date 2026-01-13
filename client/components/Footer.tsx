@@ -52,8 +52,8 @@ const ComingSoonModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ i
           {/* Icon */}
           <div className="mb-6 inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary p-1 animate-pulse">
             <img 
-              src="https://images.unsplash.com/photo-1600891964092-4316c288032e?w=200&h=200&fit=crop" 
-              alt="Steak" 
+              src="https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=200&h=200&fit=crop" 
+              alt="Raw Steak" 
               className="w-full h-full rounded-full object-cover"
             />
           </div>
