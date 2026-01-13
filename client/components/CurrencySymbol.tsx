@@ -49,9 +49,9 @@ export const PriceDisplay: React.FC<PriceDisplayProps> = ({
   className = "",
 }) => {
   return (
-    <span className={`inline-flex items-center gap-1 ${className}`}>
-      <CurrencySymbol size={size} />
-      <span>{price.toFixed(2)}</span>
+    <span className={`inline-flex items-center gap-1 [text-decoration:inherit] ${className}`}>
+      <CurrencySymbol size={size} className="[text-decoration:inherit]" />
+      <span className="[text-decoration:inherit]">{price.toFixed(2)}</span>
     </span>
   );
 };
