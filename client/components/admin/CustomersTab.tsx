@@ -24,6 +24,13 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  UserCheck,
+  UserX,
+  Edit2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/LanguageContext";
@@ -65,10 +72,21 @@ interface Review {
 const translations = {
   en: {
     customersManagement: "Customers Management",
+    customersList: "Customers List",
     wallets: "Wallets",
     loyalty: "Loyalty Points",
     reviews: "Reviews",
     searchCustomers: "Search customers by name, email...",
+    contact: "Contact",
+    email: "Email",
+    phone: "Phone",
+    emirate: "Emirate",
+    joined: "Joined",
+    active: "Active",
+    inactive: "Inactive",
+    verifiedAccount: "Verified",
+    viewDetails: "View Details",
+    editCustomer: "Edit Customer",
     customer: "Customer",
     balance: "Balance",
     totalEarned: "Total Earned",
@@ -116,10 +134,21 @@ const translations = {
   },
   ar: {
     customersManagement: "إدارة العملاء",
+    customersList: "قائمة العملاء",
     wallets: "المحافظ",
     loyalty: "نقاط الولاء",
     reviews: "التقييمات",
     searchCustomers: "البحث عن العملاء بالاسم أو البريد...",
+    contact: "التواصل",
+    email: "البريد الإلكتروني",
+    phone: "الهاتف",
+    emirate: "الإمارة",
+    joined: "تاريخ الانضمام",
+    active: "نشط",
+    inactive: "غير نشط",
+    verifiedAccount: "موثق",
+    viewDetails: "عرض التفاصيل",
+    editCustomer: "تعديل العميل",
     customer: "العميل",
     balance: "الرصيد",
     totalEarned: "إجمالي المكتسب",
@@ -179,7 +208,7 @@ export function CustomersTab({ onNavigate }: AdminTabProps) {
   const isRTL = language === "ar";
   const t = translations[language];
 
-  const [activeSection, setActiveSection] = useState<"wallets" | "loyalty" | "reviews">("wallets");
+  const [activeSection, setActiveSection] = useState<"customers" | "wallets" | "loyalty" | "reviews">("customers");
   const [customers, setCustomers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -440,6 +469,7 @@ export function CustomersTab({ onNavigate }: AdminTabProps) {
       <div className="bg-white rounded-xl shadow-sm p-2">
         <div className="flex gap-2 overflow-x-auto">
           {[
+            { id: "customers", icon: Users, label: t.customersList },
             { id: "wallets", icon: Wallet, label: t.wallets },
             { id: "loyalty", icon: Award, label: t.loyalty },
             { id: "reviews", icon: Star, label: t.reviews },
@@ -468,6 +498,145 @@ export function CustomersTab({ onNavigate }: AdminTabProps) {
           })}
         </div>
       </div>
+
+      {/* Customers List Section */}
+      {activeSection === "customers" && (
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-slate-200">
+            <div className="relative">
+              <Search className={cn("absolute top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400", isRTL ? "right-3" : "left-3")} />
+              <input
+                type="text"
+                placeholder={t.searchCustomers}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={cn(
+                  "w-full py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none",
+                  isRTL ? "pr-10 pl-4" : "pl-10 pr-4"
+                )}
+              />
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : filteredCustomers.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-500">{t.noCustomers}</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-right" : "text-left")}>
+                      {t.customer}
+                    </th>
+                    <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden sm:table-cell", isRTL ? "text-right" : "text-left")}>
+                      {t.contact}
+                    </th>
+                    <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden lg:table-cell", isRTL ? "text-right" : "text-left")}>
+                      {t.emirate}
+                    </th>
+                    <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden md:table-cell", isRTL ? "text-right" : "text-left")}>
+                      {t.status}
+                    </th>
+                    <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap hidden lg:table-cell", isRTL ? "text-right" : "text-left")}>
+                      {t.joined}
+                    </th>
+                    <th className={cn("px-3 sm:px-6 py-3 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap", isRTL ? "text-left" : "text-right")}>
+                      {t.actions}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {filteredCustomers.map((customer) => (
+                    <tr key={customer.id} className="hover:bg-slate-50">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm sm:text-lg font-bold text-blue-600">
+                              {customer.firstName?.[0] || "?"}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-900 text-sm sm:text-base truncate">
+                              {customer.firstName} {customer.familyName}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate sm:hidden">{customer.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 hidden sm:table-cell">
+                        <div className="space-y-1">
+                          <p className="text-sm text-slate-900 flex items-center gap-1.5">
+                            <Mail className="w-3.5 h-3.5 text-slate-400" />
+                            {customer.email}
+                          </p>
+                          <p className="text-sm text-slate-500 flex items-center gap-1.5">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                            {customer.mobile}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 hidden lg:table-cell">
+                        <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                          {customer.emirate || "-"}
+                        </span>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 hidden md:table-cell">
+                        <div className="flex flex-col gap-1">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded-full text-xs font-medium w-fit",
+                            customer.isActive
+                              ? "bg-green-100 text-green-700"
+                              : "bg-red-100 text-red-700"
+                          )}>
+                            {customer.isActive ? t.active : t.inactive}
+                          </span>
+                          {customer.isVerified && (
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium w-fit">
+                              {t.verifiedAccount}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-sm text-slate-500 hidden lg:table-cell">
+                        {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString(isRTL ? "ar-AE" : "en-AE") : "-"}
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className={cn(
+                          "flex items-center gap-1 sm:gap-2",
+                          isRTL ? "justify-start" : "justify-end"
+                        )}>
+                          <button
+                            onClick={() => setActiveSection("wallets")}
+                            className="p-1.5 sm:p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 rounded-lg"
+                            title={t.wallets}
+                          >
+                            <Wallet className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setActiveSection("loyalty")}
+                            className="p-1.5 sm:p-2 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
+                            title={t.loyalty}
+                          >
+                            <Award className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Wallets Section */}
       {activeSection === "wallets" && (
