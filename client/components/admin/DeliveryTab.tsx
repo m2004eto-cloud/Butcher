@@ -20,6 +20,8 @@ import {
   Phone,
   Navigation,
   Eye,
+  Zap,
+  Settings,
 } from "lucide-react";
 import { deliveryApi, ordersApi, usersApi } from "@/lib/api";
 import type { DeliveryZone, DeliveryTracking, Order, User as UserType } from "@shared/api";
@@ -28,6 +30,7 @@ import { CurrencySymbol } from "@/components/CurrencySymbol";
 import { useLanguage } from "@/context/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { useNotifications, createDriverAssignedNotification, createUserOrderNotification } from "@/context/NotificationContext";
+import { useSettings } from "@/context/SettingsContext";
 
 interface AdminTabProps {
   onNavigate?: (tab: string, id?: string) => void;
@@ -92,6 +95,15 @@ const translations = {
     notAssigned: "Not Assigned",
     assignSuccess: "Driver assigned successfully",
     assignFailed: "Failed to assign driver",
+    expressDeliverySettings: "Express Delivery Settings",
+    expressDeliveryFee: "Express Delivery Fee",
+    expressDeliveryDesc: "Additional fee for express delivery option",
+    expressDeliveryTime: "Express Delivery Time",
+    expressDeliveryTimeDesc: "Estimated delivery time for express orders",
+    expressDeliveryEnabled: "Enable Express Delivery",
+    expressDeliveryEnabledDesc: "Allow customers to choose express delivery at checkout",
+    saveSettings: "Save Settings",
+    settingsSaved: "Settings saved successfully",
   },
   ar: {
     deliveryManagement: "إدارة التوصيل",
@@ -150,6 +162,15 @@ const translations = {
     notAssigned: "غير معين",
     assignSuccess: "تم تعيين السائق بنجاح",
     assignFailed: "فشل تعيين السائق",
+    expressDeliverySettings: "إعدادات التوصيل السريع",
+    expressDeliveryFee: "رسوم التوصيل السريع",
+    expressDeliveryDesc: "رسوم إضافية لخيار التوصيل السريع",
+    expressDeliveryTime: "وقت التوصيل السريع",
+    expressDeliveryTimeDesc: "الوقت المقدر للطلبات السريعة",
+    expressDeliveryEnabled: "تفعيل التوصيل السريع",
+    expressDeliveryEnabledDesc: "السماح للعملاء باختيار التوصيل السريع عند الدفع",
+    saveSettings: "حفظ الإعدادات",
+    settingsSaved: "تم حفظ الإعدادات بنجاح",
   },
 };
 
@@ -159,13 +180,14 @@ export function DeliveryTab({ onNavigate }: AdminTabProps) {
   const t = translations[language] || translations.en;
   const { toast } = useToast();
   const { addUserNotification } = useNotifications();
+  const { settings, updateSettings } = useSettings();
 
   const [zones, setZones] = useState<DeliveryZone[]>([]);
   const [pendingDeliveries, setPendingDeliveries] = useState<Order[]>([]);
   const [trackingInfo, setTrackingInfo] = useState<Record<string, DeliveryTracking>>({});
   const [drivers, setDrivers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState<"deliveries" | "tracking" | "zones">("deliveries");
+  const [activeView, setActiveView] = useState<"deliveries" | "tracking" | "zones" | "express">("deliveries");
   const [zoneModal, setZoneModal] = useState<DeliveryZone | null>(null);
   const [createZoneModal, setCreateZoneModal] = useState(false);
   const [assignModal, setAssignModal] = useState<Order | null>(null);
@@ -308,6 +330,7 @@ export function DeliveryTab({ onNavigate }: AdminTabProps) {
               { id: "deliveries", label: t.activeDeliveriesTab, icon: Truck },
               { id: "tracking", label: t.orderTrackingTab, icon: Navigation },
               { id: "zones", label: t.deliveryZonesTab, icon: MapPin },
+              { id: "express", label: t.expressDeliverySettings, icon: Zap },
             ].map((tab) => {
               const Icon = tab.icon;
               const trackingCount = Object.keys(trackingInfo).length;
@@ -359,6 +382,14 @@ export function DeliveryTab({ onNavigate }: AdminTabProps) {
               onViewOrder={(orderId) => onNavigate?.("orders", orderId)}
               isRTL={isRTL}
               t={t}
+            />
+          ) : activeView === "express" ? (
+            <ExpressDeliverySettings
+              settings={settings}
+              onUpdate={updateSettings}
+              isRTL={isRTL}
+              t={t}
+              toast={toast}
             />
           ) : (
             <ZonesList
@@ -773,6 +804,194 @@ function DeliveriesList({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// Express Delivery Settings Component
+function ExpressDeliverySettings({
+  settings,
+  onUpdate,
+  isRTL,
+  t,
+  toast,
+}: {
+  settings: {
+    expressDeliveryFee: number;
+    sameDayCutoffHours: number;
+  };
+  onUpdate: (updates: { expressDeliveryFee?: number; sameDayCutoffHours?: number }) => void;
+  isRTL: boolean;
+  t: typeof translations.en;
+  toast: (props: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
+}) {
+  const [fee, setFee] = useState(settings.expressDeliveryFee.toString());
+  const [estimatedTime, setEstimatedTime] = useState("30");
+  const [enabled, setEnabled] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = () => {
+    setSaving(true);
+    onUpdate({
+      expressDeliveryFee: parseFloat(fee) || 25,
+    });
+    setTimeout(() => {
+      setSaving(false);
+      toast({ title: t.settingsSaved });
+    }, 500);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header Card */}
+      <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl p-6 text-white">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+            <Zap className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold">{t.expressDeliverySettings}</h3>
+            <p className="text-white/80 text-sm">
+              {isRTL ? "إدارة خيارات التوصيل السريع" : "Manage express delivery options"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Settings Form */}
+      <div className="bg-white rounded-xl border border-slate-200 divide-y divide-slate-200">
+        {/* Enable Express Delivery */}
+        <div className="p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <h4 className="font-semibold text-slate-900">{t.expressDeliveryEnabled}</h4>
+              <p className="text-sm text-slate-500 mt-1">{t.expressDeliveryEnabledDesc}</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(e) => setEnabled(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+        </div>
+
+        {/* Express Delivery Fee */}
+        <div className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h4 className="font-semibold text-slate-900">{t.expressDeliveryFee}</h4>
+              <p className="text-sm text-slate-500 mt-1">{t.expressDeliveryDesc}</p>
+            </div>
+            <div className="relative w-full sm:w-40">
+              <div className={cn("absolute top-1/2 -translate-y-1/2", isRTL ? "right-3" : "left-3")}>
+                <CurrencySymbol size="sm" />
+              </div>
+              <input
+                type="number"
+                value={fee}
+                onChange={(e) => setFee(e.target.value)}
+                min="0"
+                step="1"
+                className={cn(
+                  "w-full py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-lg font-semibold",
+                  isRTL ? "pr-10 pl-4" : "pl-10 pr-4"
+                )}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Estimated Delivery Time */}
+        <div className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex-1">
+              <h4 className="font-semibold text-slate-900">{t.expressDeliveryTime}</h4>
+              <p className="text-sm text-slate-500 mt-1">{t.expressDeliveryTimeDesc}</p>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <input
+                type="number"
+                value={estimatedTime}
+                onChange={(e) => setEstimatedTime(e.target.value)}
+                min="10"
+                max="120"
+                className="w-20 py-2.5 px-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-lg font-semibold text-center"
+              />
+              <span className="text-slate-600 font-medium">{t.mins}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Preview Card */}
+      <div className="bg-slate-50 rounded-xl p-4 sm:p-6 border border-slate-200">
+        <h4 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
+          <Eye className="w-5 h-5 text-slate-400" />
+          {isRTL ? "معاينة للعميل" : "Customer Preview"}
+        </h4>
+        <div className={cn(
+          "bg-white rounded-lg border-2 p-4 transition-colors",
+          enabled ? "border-orange-200 bg-orange-50/50" : "border-slate-200"
+        )}>
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center",
+              enabled ? "bg-orange-100 text-orange-600" : "bg-slate-100 text-slate-400"
+            )}>
+              <Zap className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-900">
+                  {isRTL ? "توصيل سريع" : "Express Delivery"}
+                </span>
+                {enabled && (
+                  <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
+                    ⚡ {estimatedTime} {t.mins}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-slate-500">
+                {enabled
+                  ? (isRTL ? `+${fee} درهم إضافية` : `+${fee} AED extra`)
+                  : (isRTL ? "غير متاح حالياً" : "Currently unavailable")
+                }
+              </p>
+            </div>
+            {enabled && (
+              <div className="text-lg font-bold text-orange-600 flex items-center gap-1">
+                <CurrencySymbol size="sm" />
+                {fee}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Save Button */}
+      <div className={cn("flex", isRTL ? "justify-start" : "justify-end")}>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+        >
+          {saving ? (
+            <>
+              <RefreshCw className="w-4 h-4 animate-spin" />
+              {isRTL ? "جاري الحفظ..." : "Saving..."}
+            </>
+          ) : (
+            <>
+              <Check className="w-4 h-4" />
+              {t.saveSettings}
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }
