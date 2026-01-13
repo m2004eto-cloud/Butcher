@@ -21,9 +21,31 @@ export default function PaymentCardPage() {
   const { user } = useAuth();
   const { addNotification, addAdminNotification } = useNotifications();
   
-  // Get addressId and delivery time slot from navigation state (passed from Checkout)
-  const addressId = (location.state as { addressId?: string; deliveryTimeSlot?: string })?.addressId || "";
-  const deliveryTimeSlot = (location.state as { addressId?: string; deliveryTimeSlot?: string })?.deliveryTimeSlot || "";
+  // Define type for navigation state passed from Checkout
+  interface CheckoutState {
+    addressId?: string;
+    deliveryTimeSlot?: string;
+    promoCode?: string;
+    discountAmount?: number;
+    isExpressDelivery?: boolean;
+    expressDeliveryFee?: number;
+    driverTip?: number;
+  }
+  
+  // Get all parameters from navigation state (passed from Checkout)
+  const checkoutState = (location.state as CheckoutState) || {};
+  const addressId = checkoutState.addressId || "";
+  const deliveryTimeSlot = checkoutState.deliveryTimeSlot || "";
+  const promoCode = checkoutState.promoCode;
+  const discountAmount = checkoutState.discountAmount || 0;
+  const isExpressDelivery = checkoutState.isExpressDelivery || false;
+  const expressDeliveryFee = checkoutState.expressDeliveryFee || 0;
+  const driverTip = checkoutState.driverTip || 0;
+  
+  // Calculate adjusted values for invoice (matching checkout display)
+  const adjustedSubtotal = subtotal - discountAmount;
+  const adjustedVat = adjustedSubtotal * 0.05;
+  const adjustedTotal = adjustedSubtotal + adjustedVat + expressDeliveryFee + driverTip;
   
   // State for delivery address
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
@@ -224,6 +246,7 @@ export default function PaymentCardPage() {
         addressId: addressId,
         paymentMethod: "card",
         deliveryNotes: deliveryNotes,
+        discountCode: promoCode,
       });
 
       if (response.success && response.data) {
@@ -233,7 +256,7 @@ export default function PaymentCardPage() {
         // Add notification for the user (current logged-in user)
         addNotification(createUserOrderNotification(response.data.orderNumber, "placed"));
         
-        // Generate TAX invoice
+        // Generate TAX invoice with correct adjusted values
         const invoiceNumber = generateInvoiceNumber(response.data.orderNumber);
         const invoiceData: InvoiceData = {
           invoiceNumber,
@@ -257,10 +280,10 @@ export default function PaymentCardPage() {
             unitPrice: item.price,
             totalPrice: item.price * item.quantity,
           })),
-          subtotal,
+          subtotal: adjustedSubtotal,
           vatRate: 5,
-          vatAmount: vat,
-          total,
+          vatAmount: adjustedVat,
+          total: adjustedTotal,
           paymentMethod: "card",
           vatReference: formData.vat_reference || undefined,
         };
@@ -512,7 +535,7 @@ export default function PaymentCardPage() {
                   >
                     {isProcessing
                       ? "Processing Payment..."
-                      : `Pay ${formatPrice(total)}`}
+                      : `Pay ${formatPrice(adjustedTotal)}`}
                   </button>
 
                   {/* Back Link */}
@@ -557,18 +580,42 @@ export default function PaymentCardPage() {
                     <span className="text-muted-foreground">Subtotal</span>
                     <span className="font-semibold">{formatPrice(subtotal)}</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-green-600">Discount</span>
+                      <span className="font-semibold text-green-600">
+                        -{formatPrice(discountAmount)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center bg-secondary/10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 text-sm">
                     <span className="text-muted-foreground">VAT (5%)</span>
                     <span className="font-semibold text-secondary">
-                      {formatPrice(vat)}
+                      {formatPrice(adjustedVat)}
                     </span>
                   </div>
+                  {isExpressDelivery && expressDeliveryFee > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-orange-600">⚡ Express Delivery</span>
+                      <span className="font-semibold text-orange-600">
+                        +{formatPrice(expressDeliveryFee)}
+                      </span>
+                    </div>
+                  )}
+                  {driverTip > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-green-600">💚 Driver Tip</span>
+                      <span className="font-semibold text-green-600">
+                        +{formatPrice(driverTip)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center pt-2 border-t border-border">
                     <span className="text-base sm:text-lg font-bold text-foreground">
                       Total
                     </span>
                     <span className="text-xl sm:text-2xl font-bold text-primary">
-                      {formatPrice(total)}
+                      {formatPrice(adjustedTotal)}
                     </span>
                   </div>
                 </div>

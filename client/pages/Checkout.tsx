@@ -849,7 +849,12 @@ export default function CheckoutPage() {
     navigate("/payment/card", { 
       state: { 
         addressId: selectedAddressId,
-        deliveryTimeSlot: deliverySlotInfo 
+        deliveryTimeSlot: deliverySlotInfo,
+        promoCode: promoApplied?.code,
+        discountAmount: discountAmount,
+        isExpressDelivery: isExpressDelivery,
+        expressDeliveryFee: isExpressDelivery ? expressDeliveryFee : 0,
+        driverTip: driverTip,
       } 
     });
   };
@@ -1072,6 +1077,7 @@ export default function CheckoutPage() {
         } : undefined,
         paymentMethod: "cod",
         deliveryNotes: deliveryNotes,
+        discountCode: promoApplied?.code,
       });
 
       if (response.success && response.data) {
@@ -1081,8 +1087,15 @@ export default function CheckoutPage() {
         // Add notification for the user (current logged-in user)
         addNotification(createUserOrderNotification(response.data.orderNumber, "placed"));
         
-        // Generate TAX invoice
+        // Generate TAX invoice with correct adjusted values
         const invoiceNumber = generateInvoiceNumber(response.data.orderNumber);
+        
+        // Calculate correct invoice values including promo, express delivery, and tip
+        const invoiceSubtotal = subtotal - discountAmount;
+        const invoiceVat = invoiceSubtotal * 0.05;
+        const invoiceDeliveryFee = isExpressDelivery ? expressDeliveryFee : 0;
+        const invoiceTotal = invoiceSubtotal + invoiceVat + invoiceDeliveryFee + driverTip;
+        
         const invoiceData: InvoiceData = {
           invoiceNumber,
           orderNumber: response.data.orderNumber,
@@ -1105,10 +1118,10 @@ export default function CheckoutPage() {
             unitPrice: item.price,
             totalPrice: item.price * item.quantity,
           })),
-          subtotal,
+          subtotal: invoiceSubtotal,
           vatRate: 5,
-          vatAmount: vat,
-          total,
+          vatAmount: invoiceVat,
+          total: invoiceTotal,
           paymentMethod: "cod",
         };
 
