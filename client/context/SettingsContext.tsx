@@ -12,6 +12,7 @@ export interface PromoCode {
   discount: number;
   type: "percent" | "fixed";
   minOrder?: number;
+  maxDiscount?: number; // Maximum discount cap for percentage discounts
   maxUses?: number;
   usedCount: number;
   expiryDate?: string;

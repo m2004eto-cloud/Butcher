@@ -574,11 +574,14 @@ export default function CheckoutPage() {
     setPromoError(null);
   };
 
-  // Calculate discount amount
+  // Calculate discount amount (matching server logic with maxDiscount cap)
   const discountAmount = promoApplied
     ? promoApplied.type === "percent"
-      ? subtotal * (promoApplied.discount / 100)
-      : promoApplied.discount
+      ? Math.round(Math.min(
+          subtotal * (promoApplied.discount / 100),
+          promoApplied.maxDiscount ?? Infinity
+        ) * 100) / 100
+      : Math.round(promoApplied.discount * 100) / 100
     : 0;
   
   // Translations
@@ -690,11 +693,11 @@ export default function CheckoutPage() {
   const [driverTip, setDriverTip] = useState<number>(0);
   const tipOptions = [0, 5, 10, 15, 20];
 
-  // Adjusted totals with express delivery and tip
-  const adjustedSubtotal = subtotal - discountAmount;
-  const adjustedVat = adjustedSubtotal * 0.05;
+  // Adjusted totals with express delivery and tip (rounded to match server calculations)
+  const adjustedSubtotal = Math.round((subtotal - discountAmount) * 100) / 100;
+  const adjustedVat = Math.round(adjustedSubtotal * 0.05 * 100) / 100;
   const deliveryFeeTotal = isExpressDelivery ? expressDeliveryFee : 0;
-  const adjustedTotal = adjustedSubtotal + adjustedVat + deliveryFeeTotal + driverTip;
+  const adjustedTotal = Math.round((adjustedSubtotal + adjustedVat + deliveryFeeTotal + driverTip) * 100) / 100;
 
   // Helper function to get localized item name
   const getItemName = (item: typeof items[0]) => {
@@ -1777,7 +1780,7 @@ export default function CheckoutPage() {
                   <div className="flex justify-between items-center bg-secondary/10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 text-sm">
                     <span className="text-muted-foreground">{t.vat}</span>
                     <span className="font-semibold text-secondary">
-                      <PriceDisplay price={promoApplied ? adjustedVat : vat} size="md" />
+                      <PriceDisplay price={adjustedVat} size="md" />
                     </span>
                   </div>
                   {isExpressDelivery && (
@@ -1805,7 +1808,7 @@ export default function CheckoutPage() {
                       {t.total}
                     </span>
                     <span className="text-xl sm:text-2xl font-bold text-primary">
-                      <PriceDisplay price={promoApplied ? adjustedTotal : (total + deliveryFeeTotal + driverTip)} size="lg" />
+                      <PriceDisplay price={adjustedTotal} size="lg" />
                     </span>
                   </div>
                 </div>

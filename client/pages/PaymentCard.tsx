@@ -42,10 +42,10 @@ export default function PaymentCardPage() {
   const expressDeliveryFee = checkoutState.expressDeliveryFee || 0;
   const driverTip = checkoutState.driverTip || 0;
   
-  // Calculate adjusted values for invoice (matching checkout display)
-  const adjustedSubtotal = subtotal - discountAmount;
-  const adjustedVat = adjustedSubtotal * 0.05;
-  const adjustedTotal = adjustedSubtotal + adjustedVat + expressDeliveryFee + driverTip;
+  // Calculate adjusted values for invoice (rounded to match server calculations)
+  const adjustedSubtotal = Math.round((subtotal - discountAmount) * 100) / 100;
+  const adjustedVat = Math.round(adjustedSubtotal * 0.05 * 100) / 100;
+  const adjustedTotal = Math.round((adjustedSubtotal + adjustedVat + expressDeliveryFee + driverTip) * 100) / 100;
   
   // State for delivery address
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
